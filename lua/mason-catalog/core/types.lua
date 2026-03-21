@@ -1,0 +1,44 @@
+---@meta
+---
+---=== DATA WRAPPER ===
+---Package name in mason registry
+---@class PkgName: string
+---Package lspconfig name
+---@class LspName: string
+---Filetype
+---@class Filetype: string
+---Possibly categories mason packages
+---@alias PkgCategories "Compiler"|"DAP"|"Formatter"|"LSP"|"Linter"|"Runtime"
+---
+---=== ENTITY ===
+---@class Pkg
+---@field name PkgName @ Mason package name
+---@field lspname? LspName @ Associated lspconfig server
+---@field categories PkgCategories[]
+---@field install fun(): nil @ Installs the package via Mason
+---@field uninstall fun(): nil @ Uninstalls the package
+---@field is_installed fun(): boolean
+---
+---=== DATA ===
+---@alias OneOrMany<T> T|T[]
+---
+---Defines how LSPs are declared:
+--- - string: single LSP
+--- - string[]: multiple LSPs
+--- - table: LSP with custom config
+---@alias LspEntry OneOrMany<LspName>|table<LspName, vim.lsp.Config>
+---@alias NormalizedLsp table<LspName, vim.lsp.Config> @ Final LSP config map used for setup
+---
+---@alias LspByFt table<Filetype, LspEntry>
+---@alias LspByGroup { filetypes: OneOrMany<Filetype>, lsps: LspEntry }
+---
+---=== SETUP OPTS ===
+---@class MasonCatalogLspOpts
+---@field default_config? vim.lsp.Config
+---@field by_ft? LspByFt
+---@field by_group? LspByGroup[]
+---
+---@class MasonCatalogSetupOpts
+---@field lsp? MasonCatalogLspOpts @ LSP configuration options
+---@field integrations OneOrMany<string> @ Enabled integrations
+---@field ensure_installed OneOrMany<PkgName> @ Mason packages to ensure installed
