@@ -58,4 +58,19 @@ function M.from(name)
 	return M.new(pkg)
 end
 
+---Retrieves a package by name and installs it if available.
+---This is a convenience wrapper around `from()` and `Pkg.install()`.
+---
+---If the package does not exist or cannot be retrieved, no installation is attempted.
+---Returns the package instance when successful, or nil otherwise.
+---@param name string @ Mason package name
+---@return Pkg|nil @ The package instance if found, otherwise nil
+function M.install(name)
+	local pkg = M.from(name)
+	if pkg then
+		pkg.install()
+	end
+	return pkg
+end
+
 return M
