@@ -16,8 +16,6 @@
 ---@field lspname? LspName @ Associated lspconfig server
 ---@field categories PkgCategories[]
 ---@field install fun(): nil @ Installs the package via Mason
----@field uninstall fun(): nil @ Uninstalls the package
----@field is_installed fun(): boolean
 ---
 ---=== DATA ===
 ---@alias OneOrMany<T> T|T[]
