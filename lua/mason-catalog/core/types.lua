@@ -35,11 +35,13 @@
 ---
 ---=== SETUP OPTS ===
 ---@class MasonCatalogLspOpts
----@field default_config? vim.lsp.Config
 ---@field by_ft? LspByFt
 ---@field by_group? LspByGroup[]
+---@field default_config? vim.lsp.Config
 ---
 ---@class MasonCatalogSetupOpts
 ---@field lsp? MasonCatalogLspOpts @ LSP configuration options
----@field integrations string|string[] @ Enabled integrations
----@field ensure_installed PkgName|PkgName[] @ Mason packages to ensure installed
+---@field debug? boolean
+---@field silent? boolean
+---@field integrations? string|string[] @ Enabled integrations
+---@field ensure_installed? PkgName|PkgName[] @ Mason packages to ensure installed
