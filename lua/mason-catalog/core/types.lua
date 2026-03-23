@@ -18,17 +18,20 @@
 ---@field install fun(): nil @ Installs the package via Mason
 ---
 ---=== DATA ===
----@alias OneOrMany<T> T|T[]
----
 ---Defines how LSPs are declared:
 --- - string: single LSP
 --- - string[]: multiple LSPs
 --- - table: LSP with custom config
----@alias LspEntry OneOrMany<LspName>|table<LspName, vim.lsp.Config>
+---@alias LspEntry LspName|LspName[]|table<LspName, vim.lsp.Config>
 ---@alias NormalizedLsp table<LspName, vim.lsp.Config> @ Final LSP config map used for setup
 ---
 ---@alias LspByFt table<Filetype, LspEntry>
----@alias LspByGroup { filetypes: OneOrMany<Filetype>, lsps: LspEntry }
+---@alias LspByGroup { filetypes: Filetype|Filetype[], lsps: LspEntry }
+---
+---@class EnsureList
+---@field ensure fun(name: PkgName): Pkg? # Ensures a single package is installed (idempotent)
+---@field ensure_many fun(list: PkgName[]): nil # Ensures multiple packages are installed
+---@field ensure_any fun(input: PkgName|PkgName[]): nil # Accepts a single name or list and ensures all
 ---
 ---=== SETUP OPTS ===
 ---@class MasonCatalogLspOpts
@@ -38,5 +41,5 @@
 ---
 ---@class MasonCatalogSetupOpts
 ---@field lsp? MasonCatalogLspOpts @ LSP configuration options
----@field integrations OneOrMany<string> @ Enabled integrations
----@field ensure_installed OneOrMany<PkgName> @ Mason packages to ensure installed
+---@field integrations string|string[] @ Enabled integrations
+---@field ensure_installed PkgName|PkgName[] @ Mason packages to ensure installed
