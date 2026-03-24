@@ -1,5 +1,7 @@
 # Mason Catalog
 
+![Demo](assets/demo.gif)
+
 Mason Catalog manages package installation (LSPs, formatters, DAPs, linters, and runtimes) within the Mason ecosystem, while also handling LSP configuration.
 
 ## Features
