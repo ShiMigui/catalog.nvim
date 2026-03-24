@@ -1,5 +1,3 @@
-local normalizer = require("mason-catalog.core.lsp.normalizer")
-
 package.loaded["mason-catalog.utils.ensurer"] = {
 	ensure = function(name)
 		return {
@@ -8,6 +6,8 @@ package.loaded["mason-catalog.utils.ensurer"] = {
 		}
 	end,
 }
+
+local normalizer = require("mason-catalog.core.lsp.normalizer")
 
 describe("lsp normalizer", function()
 	describe("invalid inputs", function()
