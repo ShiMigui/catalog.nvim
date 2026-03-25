@@ -1,5 +1,6 @@
 local ensurer = require("mason-catalog.utils.ensurer")
 local log = require("mason-catalog.utils.logger").with_scope(...)
+local M = {}
 
 ---@param pkg_name PkgName
 ---@param config vim.lsp.Config
@@ -18,7 +19,7 @@ end
 
 ---@param config vim.lsp.Config
 ---@param default vim.lsp.Config
-local function merge_config(config, default)
+function M.merge_config(config, default)
 	return vim.tbl_deep_extend("force", vim.deepcopy(default), config)
 end
 
@@ -27,7 +28,7 @@ local table_handlers = {
 	string = {
 		table = function(pkg, cfg, default)
 			log.dbg("Extending config for '%s' LSP", pkg)
-			return pkg, merge_config(cfg, default)
+			return pkg, M.merge_config(cfg, default)
 		end,
 	},
 	number = {
@@ -58,15 +59,21 @@ local entry_handlers = {
 	end,
 }
 
-return {
-	---@param entry LspEntry
-	---@param default_config vim.lsp.Config
-	---@return NormalizedLsp?
-	setup = function(entry, default_config)
-		local entry_handler = entry_handlers[type(entry)]
-		if entry_handler then
-			return entry_handler(entry, default_config)
-		end
-		return log.err("Type of entry invalid!")
-	end,
-}
+---@param entry LspEntry
+---@param default_config vim.lsp.Config
+---@return NormalizedLsp?
+function M.setup(entry, default_config)
+	local entry_handler = entry_handlers[type(entry)]
+	if entry_handler then
+		return entry_handler(entry, default_config)
+	end
+	return log.err("Type of entry invalid!")
+end
+
+---@param ext FileExtension
+---@return Filetype?
+function M.ext_to_ft(ext)
+	return vim.filetype.match({ extension = ext })
+end
+
+return M

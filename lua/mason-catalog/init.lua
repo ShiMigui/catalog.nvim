@@ -10,10 +10,7 @@ local function _setup(opts)
 	return function()
 		log.dbg("DEBUG=%s SILENT=%s", tostring(vim.g.mason_catalog_debug), tostring(vim.g.mason_catalog_silent))
 
-		local lsps = opts.lsp
-		if lsps then
-			lsp.setup(lsps)
-		end
+		lsp.setup(opts.lsp)
 
 		if opts.ensure_installed then
 			ensurer.ensure_any(opts.ensure_installed)

@@ -36,7 +36,6 @@
 ---=== SETUP OPTS ===
 ---@class MasonCatalogLspOpts
 ---@field by_ft? LspByFt
----@field auto_enable? boolean
 ---@field by_group? LspByGroup[]
 ---@field default_config? vim.lsp.Config
 ---
