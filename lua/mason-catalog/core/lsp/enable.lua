@@ -1,4 +1,4 @@
-local state = require("mason-catalog.core.lsp.state")
+local state = require("mason-catalog.core.lsp.state").state("lsps_by_ft")
 local log = require("mason-catalog.utils.logger").with_scope(...)
 local M = {}
 

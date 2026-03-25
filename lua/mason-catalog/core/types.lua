@@ -45,3 +45,8 @@
 ---@field silent? boolean
 ---@field integrations? string|string[] @ Enabled integrations
 ---@field ensure_installed? PkgName|PkgName[] @ Mason packages to ensure installed
+---
+---@class StateMap<K, V>
+---@field add fun(k: K, v: V): nil
+---@field get fun(k: K): V?
+---@field get_all fun(): table<K, V>

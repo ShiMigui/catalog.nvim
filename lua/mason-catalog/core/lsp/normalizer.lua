@@ -1,5 +1,5 @@
-local ensurer = require("mason-catalog.utils.ensurer")
 local log = require("mason-catalog.utils.logger").with_scope(...)
+local ensurer = require("mason-catalog.utils.ensurer")
 local M = {}
 
 ---@param pkg_name PkgName
