@@ -17,7 +17,7 @@ local function _setup(opts)
 		end
 
 		if opts.integrations then
-			log.err("Income feature, please wait for updates!")
+			log.err("Incoming feature, please wait for updates!")
 		end
 	end
 end
