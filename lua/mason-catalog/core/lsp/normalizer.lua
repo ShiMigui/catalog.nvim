@@ -10,7 +10,7 @@ local function normalize_pkg(pkg_name, config, normalized)
 		if p.lspname then
 			normalized[p.lspname] = config
 			log.dbg("LSP '%s' config was added to normalized list", p.lspname)
-			return
+			return normalized
 		end
 		log.wrn("LSPName for package '%s' is not set", pkg_name)
 	end
@@ -22,34 +22,51 @@ local function merge_config(config, default)
 	return vim.tbl_deep_extend("force", vim.deepcopy(default), config)
 end
 
+-- handlers[k][v]
+local table_handlers = {
+	string = {
+		table = function(pkg, cfg, default)
+			log.dbg("Extending config for '%s' LSP", pkg)
+			return pkg, merge_config(cfg, default)
+		end,
+	},
+	number = {
+		string = function(_, pkg, default)
+			log.dbg("Adding LSP '%s' with default config", pkg)
+			return pkg, vim.deepcopy(default)
+		end,
+	},
+}
+
+local entry_handlers = {
+	string = function(entry, default)
+		return normalize_pkg(entry, vim.deepcopy(default), {})
+	end,
+	table = function(entry, default)
+		local normalized = {}
+		for k, v in pairs(entry) do
+			local handler = table_handlers[type(k)]
+			local type_v = type(v)
+			if handler and handler[type_v] then
+				local pkg_name, config = handler[type_v](k, v, default)
+				normalize_pkg(pkg_name, config, normalized)
+			else
+				log.err("Invalid config for '%s'", k)
+			end
+		end
+		return next(normalized) and normalized or nil
+	end,
+}
+
 return {
 	---@param entry LspEntry
 	---@param default_config vim.lsp.Config
 	---@return NormalizedLsp?
 	setup = function(entry, default_config)
-		local t = type(entry)
-		local normalized = {}
-		if t == "string" then
-			normalize_pkg(entry, vim.deepcopy(default_config), normalized)
-		elseif t ~= "table" then
-			return log.err("Type of entry invalid!")
-		elseif vim.islist(entry) then
-			for _, pkg_name in ipairs(entry) do
-				normalize_pkg(pkg_name, vim.deepcopy(default_config), normalized)
-			end
-		else
-			for pkg_name, config in pairs(entry) do
-				if type(config) == "table" then
-					log.dbg("Extending config for '%s' LSP", pkg_name)
-					normalize_pkg(pkg_name, merge_config(config, default_config), normalized)
-				elseif type(config) == "string" then
-					normalize_pkg(config, vim.deepcopy(default_config), normalized)
-				else
-					log.wrn("Invalid config for '%s'", pkg_name)
-				end
-			end
+		local entry_handler = entry_handlers[type(entry)]
+		if entry_handler then
+			return entry_handler(entry, default_config)
 		end
-
-		return next(normalized) and normalized or nil
+		return log.err("Type of entry invalid!")
 	end,
 }
