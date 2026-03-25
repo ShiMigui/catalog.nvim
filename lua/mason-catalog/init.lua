@@ -1,7 +1,5 @@
 local M = {}
 
-vim.opt.rtp:prepend(vim.fn.getcwd())
-
 local scope = ...
 local ensurer, log, lsp
 
