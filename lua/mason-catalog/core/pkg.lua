@@ -1,6 +1,6 @@
 ---@class RegistryPkgAdapter
 local M = {}
-local logger = require("mason-catalog.utils.logger")
+local log = require("mason-catalog.utils.logger").with_scope(...)
 local registry = require("mason-registry")
 
 ---@type table<PkgName, Pkg>
@@ -11,7 +11,6 @@ local packages_in_cache = {}
 ---@param mason_package Package
 ---@return Pkg
 function M.new(mason_package)
-	local log = logger.with_scope("Pkg.new")
 	local name = mason_package.name
 	local spec = mason_package.spec or {}
 
@@ -44,7 +43,6 @@ end
 ---@param name string
 ---@return Pkg?
 function M.from(name)
-	local log = logger.with_scope("Pkg.from")
 	log.dbg("Getting package %s from registry", name)
 
 	local ok, pkg = pcall(registry.get_package, name)

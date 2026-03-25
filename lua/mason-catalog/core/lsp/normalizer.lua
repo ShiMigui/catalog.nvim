@@ -1,11 +1,10 @@
 local ensurer = require("mason-catalog.utils.ensurer")
-local logger = require("mason-catalog.utils.logger")
+local log = require("mason-catalog.utils.logger").with_scope(...)
 
 ---@param pkg_name PkgName
 ---@param config vim.lsp.Config
 ---@param normalized table<LspName, vim.lsp.Config>
 local function normalize_pkg(pkg_name, config, normalized)
-	local log = logger.with_scope("lsp.normalizer.normalize_pkg")
 	local p = ensurer.ensure(pkg_name)
 	if p then
 		if p.lspname then
@@ -28,7 +27,6 @@ return {
 	---@param default_config vim.lsp.Config
 	---@return NormalizedLsp?
 	setup = function(entry, default_config)
-		local log = logger.with_scope("lsp.normalizer.setup")
 		local t = type(entry)
 		local normalized = {}
 		if t == "string" then

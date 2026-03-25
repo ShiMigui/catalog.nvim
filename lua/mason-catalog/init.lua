@@ -2,11 +2,11 @@ local M = {}
 
 vim.opt.rtp:prepend(vim.fn.getcwd())
 
-local ensurer, logger, lsp
+local scope = ...
+local ensurer, log, lsp
 
 ---@param opts MasonCatalogSetupOpts
 local function _setup(opts)
-   local log = logger.with_scope("init.setup")
 	return function()
 		log.dbg("DEBUG=%s SILENT=%s", tostring(vim.g.mason_catalog_debug), tostring(vim.g.mason_catalog_silent))
 
@@ -32,7 +32,7 @@ function M.setup(opts)
 
 	local registry_verifier = require("mason-catalog.utils.registry_verifier")
 	ensurer = require("mason-catalog.utils.ensurer")
-	logger = require("mason-catalog.utils.logger")
+	log = require("mason-catalog.utils.logger").with_scope(scope)
 	lsp = require("mason-catalog.core.lsp")
 
 	registry_verifier.ensure_ready(_setup(opts))

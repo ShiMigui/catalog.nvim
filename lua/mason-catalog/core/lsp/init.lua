@@ -1,12 +1,11 @@
 local lsp_normalizer = require("mason-catalog.core.lsp.normalizer")
 local autocmd = require("mason-catalog.core.lsp.autocmd")
 local state = require("mason-catalog.core.lsp.state")
-local logger = require("mason-catalog.utils.logger")
+local log = require("mason-catalog.utils.logger").with_scope(...)
 
 return {
 	---@param opts MasonCatalogLspOpts
 	setup = function(opts)
-      local log = logger.with_scope("lsp.init.setup")
 		log.dbg("Running LSP setup()...")
 		local default_config = opts.default_config or {}
 		local by_group = opts.by_group or nil

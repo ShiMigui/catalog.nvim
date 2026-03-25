@@ -1,5 +1,5 @@
 local state = require("mason-catalog.core.lsp.state")
-local logger = require("mason-catalog.utils.logger")
+local log = require("mason-catalog.utils.logger").with_scope(...)
 local M = {}
 
 ---@param lsp_name LspName
@@ -12,7 +12,6 @@ end
 
 ---@param ft Filetype
 function M.setup_lsps_in_ft(ft)
-   local log = logger.with_scope("lsp.enable.setup_lsps_in_ft")
 	local lsps = state.get(ft)
 	if lsps then
 		log.dbg("Initializing LSPs with filetype '%s'...", ft)
@@ -24,7 +23,7 @@ end
 
 ---@param args vim.api.keyset.create_autocmd.callback_args
 function M.setup_lsps_in_autocmd(args)
-   M.setup_lsps_in_ft(args.match)
+	M.setup_lsps_in_ft(args.match)
 end
 
 return M
