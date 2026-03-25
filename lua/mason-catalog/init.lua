@@ -6,8 +6,9 @@ local ensurer, logger, lsp
 
 ---@param opts MasonCatalogSetupOpts
 local function _setup(opts)
+   local log = logger.with_scope("init.setup")
 	return function()
-		logger.dbg("DEBUG=%s SILENT=%s", tostring(vim.g.mason_catalog_debug), tostring(vim.g.mason_catalog_silent))
+		log.dbg("DEBUG=%s SILENT=%s", tostring(vim.g.mason_catalog_debug), tostring(vim.g.mason_catalog_silent))
 
 		local lsps = opts.lsp
 		if lsps then
@@ -19,7 +20,7 @@ local function _setup(opts)
 		end
 
 		if opts.integrations then
-			logger.err("Income feature, please wait for updates!")
+			log.err("Income feature, please wait for updates!")
 		end
 	end
 end

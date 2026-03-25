@@ -6,7 +6,8 @@ local logger = require("mason-catalog.utils.logger")
 return {
 	---@param opts MasonCatalogLspOpts
 	setup = function(opts)
-		logger.dbg("Running LSP setup()...")
+      local log = logger.with_scope("lsp.init.setup")
+		log.dbg("Running LSP setup()...")
 		local default_config = opts.default_config or {}
 		local by_group = opts.by_group or nil
 		local by_ft = opts.by_ft or nil
@@ -14,7 +15,7 @@ return {
 		if type(by_group) == "table" and next(by_group) then
 			for _, data in ipairs(by_group) do
 				if type(data.filetypes) == "table" and data.lsps then
-					local normalized = lsp_normalizer(data.lsps, default_config)
+					local normalized = lsp_normalizer.setup(data.lsps, default_config)
 					if normalized then
 						for _, ft in ipairs(data.filetypes) do
 							state.add(ft, vim.deepcopy(normalized))
@@ -26,7 +27,7 @@ return {
 
 		if type(by_ft) == "table" and next(by_ft) then
 			for ft, entry in pairs(by_ft) do
-				local normalized = lsp_normalizer(entry, state.get(ft) or default_config)
+				local normalized = lsp_normalizer.setup(entry, state.get(ft) or default_config)
 				if normalized then
 					state.add(ft, normalized)
 				end

@@ -12,9 +12,10 @@ end
 
 ---@param ft Filetype
 function M.setup_lsps_in_ft(ft)
+   local log = logger.with_scope("lsp.enable.setup_lsps_in_ft")
 	local lsps = state.get(ft)
 	if lsps then
-		logger.dbg("Initializing LSPs with filetype '%s'...", ft)
+		log.dbg("Initializing LSPs with filetype '%s'...", ft)
 		for lsp_name, config in pairs(lsps) do
 			M.setup_lsp(lsp_name, config)
 		end

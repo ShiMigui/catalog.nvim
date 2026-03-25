@@ -11,10 +11,11 @@ local packages_in_cache = {}
 ---@param mason_package Package
 ---@return Pkg
 function M.new(mason_package)
+	local log = logger.with_scope("Pkg.new")
 	local name = mason_package.name
 	local spec = mason_package.spec or {}
 
-	logger.dbg("Converting mason_package to Pkg [%s]", name)
+	log.dbg("Converting mason_package to Pkg [%s]", name)
 	if not packages_in_cache[name] then
 		packages_in_cache[name] = {
 			name = name,
@@ -25,11 +26,11 @@ function M.new(mason_package)
 			install = function()
 				if not mason_package:is_installed() then
 					if mason_package.is_installing and mason_package:is_installing() then
-						logger.dbg("Package %s is already installing", name)
+						log.dbg("Package %s is already installing", name)
 						return
 					end
 
-					logger.inf("Installing package %s", name)
+					log.inf("Installing package %s", name)
 					mason_package:install()
 				end
 			end,
@@ -43,18 +44,19 @@ end
 ---@param name string
 ---@return Pkg?
 function M.from(name)
-	logger.dbg("Getting package %s from registry", name)
+	local log = logger.with_scope("Pkg.from")
+	log.dbg("Getting package %s from registry", name)
 
 	local ok, pkg = pcall(registry.get_package, name)
 	if not ok then
-		return logger.err("Error retrieving package %s: %s", name, pkg)
+		return log.err("Error retrieving package %s: %s", name, pkg)
 	end
 
 	if not pkg then
-		return logger.err("Package %s not found", name)
+		return log.err("Package %s not found", name)
 	end
 
-	logger.dbg("Package %s found", name)
+	log.dbg("Package %s found", name)
 	return M.new(pkg)
 end
 
