@@ -22,7 +22,19 @@ local function notify(level)
 	---@param msg string
 	---@param ... any
 	return function(msg, ...)
-		vim.notify(M.fmt(msg, ...), level, { title = "mason-catalog" })
+		vim.notify(M.fmt(msg, ...), level)
+	end
+end
+
+---Creates a notify function bound to a specific log level.
+---@param level vim.log.levels
+---@param scope string
+---@return fun(msg: string, ...: any)
+local function notify_scope(level, scope)
+	---@param msg string
+	---@param ... any
+	return function(msg, ...)
+		vim.notify(M.fmt(scope .. msg, ...), level)
 	end
 end
 
@@ -36,7 +48,7 @@ local debug_flag = vim.g.mason_catalog_debug
 M.err = silent_flag and mock or notify(lvls.ERROR)
 M.inf = silent_flag and mock or notify(lvls.INFO)
 M.wrn = silent_flag and mock or notify(lvls.WARN)
-M.dbg = (not debug_flag or silent_flag) and mock or notify(lvls.DEBUG)
+M.dbg = debug_flag and notify(lvls.DEBUG) or mock
 
 ---Safely requires a module.
 ---Throws an error if the module cannot be loaded.
@@ -60,6 +72,16 @@ function M.try_require(name)
 		M.dbg("[%s] not available", name)
 	end
 	return mod
+end
+
+function M.with_scope(scope)
+	scope = "[mason-catalog] " .. scope .. ": "
+	return {
+		err = silent_flag and mock or notify_scope(lvls.ERROR, scope),
+		inf = silent_flag and mock or notify_scope(lvls.INFO, scope),
+		wrn = silent_flag and mock or notify_scope(lvls.WARN, scope),
+		dbg = debug_flag and notify_scope(lvls.DEBUG, scope) or mock,
+	}
 end
 
 return M
