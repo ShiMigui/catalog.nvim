@@ -11,7 +11,7 @@ local debug_flag = vim.g.mason_catalog_debug
 return {
 	---@param scope string
 	with_scope = function(scope)
-		local m = { scope = "[mason-catalog] " .. scope .. ": " }
+		local m = { scope = "[" .. scope .. "]: " }
 
 		---Formats a message using `string.format` if arguments are provided.
 		---Safely wraps formatting in `pcall` to avoid runtime errors.
