@@ -7,7 +7,7 @@ package.loaded["mason-catalog.utils.ensurer"] = {
 	end,
 }
 
-local normalizer = require("mason-catalog.core.lsp.normalizer")
+local normalizer = require("mason-catalog.core.lsp.normalizer").setup
 
 describe("lsp normalizer", function()
 	describe("invalid inputs", function()
@@ -75,7 +75,7 @@ describe("lsp normalizer", function()
 			}
 
 			package.loaded["mason-catalog.core.lsp.normalizer"] = nil
-			local normalizer = require("mason-catalog.core.lsp.normalizer")
+			local normalizer = require("mason-catalog.core.lsp.normalizer").setup
 
 			local result = normalizer("lua-language-server", {})
 			assert.is_nil(result)
