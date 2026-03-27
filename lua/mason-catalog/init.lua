@@ -1,36 +1,37 @@
-local M = {}
-
+local on_ready_registry = require("mason-catalog.utils.on_ready_registry")
 local scope = ...
-local ensurer, log, lsp
 
----@param opts MasonCatalogSetupOpts
+---@param opts CatalogSetupOpts
 local function _setup(opts)
-	return function()
-		log.dbg("DEBUG=%s SILENT=%s", tostring(vim.g.mason_catalog_debug), tostring(vim.g.mason_catalog_silent))
+	local log = require("mason-catalog.utils.logger").with_scope(scope)
+	local pkg_adapter = require("mason-catalog.core.pkg.adapter")
+	local lsp = require("mason-catalog.core.lsp")
 
-		lsp.setup(opts.lsp)
+	log.dbg("Initializing MasonCatalog...")
 
-		if opts.ensure_installed then
-			ensurer.ensure_any(opts.ensure_installed)
-		end
+	lsp.setup(opts.lsp or {})
 
-		if opts.integrations then
-			log.err("Incoming feature, please wait for updates!")
-		end
+	for _, pkg_name in ipairs(opts.ensure_installed or {}) do
+		pkg_adapter.install(pkg_name)
+	end
+
+	if opts.integrations then
+		log.wrn("Integrations, this feature has not been implemented yet!")
 	end
 end
 
----@param opts MasonCatalogSetupOpts
-function M.setup(opts)
-	vim.g.mason_catalog_silent = opts.silent == true
-	vim.g.mason_catalog_debug = opts.debug == true
+return {
+	---@param opts CatalogSetupOpts
+	setup = function(opts)
+		if not opts or type(opts) ~= "table" then
+			return
+		end
 
-	local registry_verifier = require("mason-catalog.utils.registry_verifier")
-	ensurer = require("mason-catalog.utils.ensurer")
-	log = require("mason-catalog.utils.logger").with_scope(scope)
-	lsp = require("mason-catalog.core.lsp")
+		vim.g.mason_catalog_debug = opts.debug == true
+		vim.g.mason_catalog_silent = opts.silent == true
 
-	registry_verifier.ensure_ready(_setup(opts))
-end
-
-return M
+		on_ready_registry(function()
+			_setup(opts)
+		end)
+	end,
+}

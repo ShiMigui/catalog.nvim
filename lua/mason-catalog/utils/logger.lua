@@ -1,69 +1,71 @@
-local lvls = vim.log.levels
-
----No-op function used when logging is disabled.
----@param ... any
-local function mock(...) end
-
-local silent_flag = vim.g.mason_catalog_silent
-local debug_flag = vim.g.mason_catalog_debug
+---@alias LogFunction fun(msg: string, ...: any): nil
 
 ---@class MasonCatalogLogger
-return {
-	---@param scope string
-	with_scope = function(scope)
-		local m = { scope = "[" .. scope .. "]: " }
+local M = {}
 
-		---Formats a message using `string.format` if arguments are provided.
-		---Safely wraps formatting in `pcall` to avoid runtime errors.
-		---@param message string
-		---@param ... any
-		---@return string
-		local function build_msg(message, ...)
-			if select("#", ...) > 0 then
-				message = m.scope .. message
-				local ok, result = pcall(string.format, message, ...)
-				return ok and result or message
-			end
-			return m.scope .. message
+---@param message string
+---@param ... any
+---@return string
+function M.build_msg(message, ...)
+	if select("#", ...) > 0 then
+		local ok, result = pcall(string.format, message, ...)
+		if ok then
+			return result
 		end
+	end
+	return message
+end
 
-		---Creates a notify function bound to a specific log level.
-		---@param level vim.log.levels
-		---@return fun(msg: string, ...: any)
-		local function notify_scope(level)
-			return function(msg, ...)
-				vim.notify(build_msg(msg, ...), level)
-			end
+---@param level vim.log.levels
+---@param scope string
+---@return LogFunction
+local function notify_scope(level, scope)
+	return function(msg, ...)
+		vim.notify(scope .. M.build_msg(msg, ...), level)
+	end
+end
+
+---@param success LogFunction
+---@param failure LogFunction
+local function req_builder(success, failure)
+	---@param mod string
+	---@return any?
+	return function(mod)
+		local ok, res = pcall(require, mod)
+		if ok then
+			success("Module '%s' found", mod)
+			return res
 		end
+		failure("Module '%s' not found", mod)
+	end
+end
 
-		m.err = silent_flag and mock or notify_scope(lvls.ERROR)
-		m.inf = silent_flag and mock or notify_scope(lvls.INFO)
-		m.wrn = silent_flag and mock or notify_scope(lvls.WARN)
-		m.dbg = debug_flag and notify_scope(lvls.DEBUG) or mock
+---@param ... any
+local function noop(...) end
 
-		---Safely requires a module.
-		---Throws an error if the module cannot be loaded.
-		---@param name string
-		---@return any
-		function m.require(name)
-			local ok, mod = pcall(require, name)
-			if not ok then
-				error(build_msg("[%s] could not be required!", name))
-			end
-			return mod
-		end
+local ic_silent = vim.g.mason_catalog_silent
+local ic_debug = vim.g.mason_catalog_debug
 
-		---Attempts to require a module without interrupting execution.
-		---If the module is not available, a debug message is logged.
-		---@param name string
-		---@return any|nil
-		function m.try_require(name)
-			local ok, mod = pcall(require, name)
-			if not ok then
-				m.dbg("[%s] not available", name)
-			end
-			return mod
-		end
-		return m
-	end,
-}
+---@param scope string
+function M.with_scope(scope)
+	scope = "[" .. scope .. "] "
+
+	local logger = {
+		err = ic_silent and noop or notify_scope(vim.log.levels.ERROR, scope),
+		inf = ic_silent and noop or notify_scope(vim.log.levels.INFO, scope),
+		wrn = ic_silent and noop or notify_scope(vim.log.levels.WARN, scope),
+		dbg = ic_debug and notify_scope(vim.log.levels.DEBUG, scope) or noop,
+
+		---@type LogFunction
+		error = function(msg, ...)
+			error(scope .. M.build_msg(msg, ...))
+		end,
+	}
+
+	logger.require_or_error = req_builder(logger.dbg, logger.error)
+	logger.try_require = req_builder(logger.dbg, logger.err)
+
+	return logger
+end
+
+return M
