@@ -1,4 +1,4 @@
-local log = require("mason-catalog.utils.logger").with_scope(...)
+local log = require("mason-catalog.utils.logger").scope(...)
 local cache = require("mason-catalog.core.pkg.cache")
 local mason_registry = require("mason-registry")
 

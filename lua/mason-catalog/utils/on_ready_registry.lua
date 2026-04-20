@@ -1,4 +1,4 @@
-local log = require("mason-catalog.utils.logger").with_scope(...)
+local log = require("mason-catalog.utils.logger").scope(...)
 local mason_registry = require("mason-registry")
 
 return {
@@ -6,7 +6,8 @@ return {
 	on_ready = function(cb)
 		if #mason_registry.get_all_packages() > 0 then
 			log.dbg("Mason registry is already populated!")
-			return cb()
+			cb()
+			return
 		end
 
 		log.inf("Mason registry is not populated! Refreshing...")

@@ -1,6 +1,6 @@
-local log = require("mason-catalog.utils.logger").with_scope(...)
+local log = require("mason-catalog.utils.logger").scope(...)
 local pkg_adapter = require("mason-catalog.core.pkg.adapter")
-local conform = log.require_or_error("conform")
+local conform = log.require("conform")
 
 return {
 	setup = function()

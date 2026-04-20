@@ -1,4 +1,4 @@
-local log = require("mason-catalog.utils.logger").with_scope(...)
+local log = require("mason-catalog.utils.logger").scope(...)
 local pkg_adapter = require("mason-catalog.core.pkg.adapter")
 
 ---@class LspNormalizer
