@@ -1,6 +1,6 @@
-local log = require("mason-catalog.utils.logger").scope(...)
 local lsp_enabler = require("mason-catalog.core.lsp.lsp_enabler")
 local resolver = require("mason-catalog.core.lsp.lsp_registry")
+local log = require("mason-catalog.logger").scope(...)
 
 local register_filetypes = resolver.register_filetypes
 local resolve_groups_to_filetypes = resolver.resolve_groups_to_filetypes

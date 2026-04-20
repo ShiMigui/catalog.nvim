@@ -1,6 +1,6 @@
 local normalizer = require("mason-catalog.core.lsp.entry_normalizer")
-local log = require("mason-catalog.utils.logger").scope(...)
 local state = require("mason-catalog.core.lsp.lsp_state")
+local log = require("mason-catalog.logger").scope(...)
 local utils = require("mason-catalog.utils")
 
 local M = {}

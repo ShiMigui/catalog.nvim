@@ -2,7 +2,7 @@ local scope = ...
 
 ---@param opts CatalogSetupOpts
 local function _setup(opts)
-	local log = require("mason-catalog.utils.logger").scope(scope)
+	local log = require("mason-catalog.logger").scope(scope)
 	local pkg_adapter = require("mason-catalog.core.pkg.adapter")
 	local lsp = require("mason-catalog.core.lsp")
 	log.inf("Running setup...")
@@ -30,7 +30,7 @@ return {
 		vim.g.mason_catalog_debug = opts.debug == true
 		vim.g.mason_catalog_silent = opts.silent == true
 
-		require("mason-catalog.utils.on_ready_registry").on_ready(function()
+		require("mason-catalog.utils").on_ready_registry(function()
 			_setup(opts)
 		end)
 	end,

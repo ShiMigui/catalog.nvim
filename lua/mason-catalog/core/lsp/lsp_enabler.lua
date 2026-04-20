@@ -1,6 +1,6 @@
-local log = require("mason-catalog.utils.logger").scope(...)
 local lsp_state = require("mason-catalog.core.lsp.lsp_state")
 local pkg_adapter = require("mason-catalog.core.pkg.adapter")
+local log = require("mason-catalog.logger").scope(...)
 
 local M = {}
 

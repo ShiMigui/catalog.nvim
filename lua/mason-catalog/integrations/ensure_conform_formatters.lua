@@ -1,5 +1,5 @@
-local log = require("mason-catalog.utils.logger").scope(...)
 local pkg_adapter = require("mason-catalog.core.pkg.adapter")
+local log = require("mason-catalog.logger").scope(...)
 local conform = log.require("conform")
 
 return {
