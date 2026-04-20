@@ -1,4 +1,4 @@
-local log = require("mason-catalog.utils.logger").with_scope(...)
+local log = require("mason-catalog.utils.logger").scope(...)
 local lsp_enabler = require("mason-catalog.core.lsp.lsp_enabler")
 local resolver = require("mason-catalog.core.lsp.lsp_registry")
 
