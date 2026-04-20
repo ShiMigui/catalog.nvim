@@ -2,7 +2,7 @@ local scope = ...
 
 ---@param opts CatalogSetupOpts
 local function _setup(opts)
-	local log = require("mason-catalog.utils.logger").with_scope(scope)
+	local log = require("mason-catalog.utils.logger").scope(scope)
 	local pkg_adapter = require("mason-catalog.core.pkg.adapter")
 	local lsp = require("mason-catalog.core.lsp")
 	log.inf("Running setup...")
