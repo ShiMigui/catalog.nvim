@@ -1,38 +1,21 @@
 ---@meta
 
----@alias LspConfig vim.lsp.Config
----@alias LspName string
----@alias PackageName string
----@alias FileType string
----@alias FileExtension string
+---@alias catalog.lsp.name string
+---@alias catalog.lsp.config vim.lsp.Config
 
----@alias LspSpec LspName | LspName[] | table<LspName, LspConfig>
+---@alias catalog.package.name string
 
----@class FileGroup<T>: table<T>
----@field lsps LspSpec
+-- lsp
+---@class catalog.Lsp
+---@field name catalog.lsp.name
+---@field config? catalog.lsp.config
 
----@class FileTypeGroup: FileGroup<FileType>
----@class ExtensionGroup: FileGroup<FileExtension>
-
----@class LspDefinition
----@field name LspName
----@field config? LspConfig
-
----@class CatalogPackage
----@field name PackageName
----@field lsp? LspDefinition
+-- package
+---@class catalog.Package
+---@field name catalog.package.name
 ---@field install fun(): nil
----@field verify_lsp fun(config?: LspConfig, default_config: LspConfig): PackageName?
+---@field lsp? catalog.Lsp
 
----@class LspSetupOptions
----@field default_config? LspConfig
----@field groups? FileTypeGroup[]
----@field by_ft? table<FileType, LspSpec>
----@field by_ext? ExtensionGroup[]
-
----@class CatalogOptions
----@field debug? boolean
----@field silent? boolean
----@field lsp? LspSetupOptions
----@field integrations? string[]
----@field ensure_installed? PackageName[]
+-- provider
+---@class catalog.Provider
+---@field get fun(name: catalog.package.name): catalog.Package?
