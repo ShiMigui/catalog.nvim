@@ -5,7 +5,7 @@ local function setup()
 	vim.g.mason_catalog_debug = false
 	vim.g.mason_catalog_silent = false
 	local logger = require("mason-catalog.logger").logger(scope)
-	local provider = require("lua.mason-catalog.core.provider")
+	local provider = require("mason-catalog.core.provider")
 	logger.dbg("starting")
 
 	if setup_opts.lsp then
