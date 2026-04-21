@@ -22,6 +22,7 @@
 ---@field name PackageName
 ---@field lsp? LspDefinition
 ---@field install fun(): nil
+---@field verify_lsp fun(config?: LspConfig, default_config: LspConfig): PackageName?
 
 ---@class LspSetupOptions
 ---@field default_config? LspConfig

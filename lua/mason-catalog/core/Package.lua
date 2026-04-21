@@ -37,16 +37,12 @@ function M.verify_lsp(pkg_name, config, default_config)
 		return
 	end
 
-	local lsp = pkg.lsp
-	if lsp then
-		lsp.config = lsp.config or vim.deepcopy(default_config)
-		if config then
-			lsp.config = vim.tbl_deep_extend("force", lsp.config, config)
-		end
-		return pkg.name
+	local name = pkg.verify_lsp(config, default_config)
+	if not name then
+		logger.wrn("Given package '%s' is not registered as LSP", pkg_name)
 	end
 
-	logger.wrn("Given pkg_name '%s' is not registered as LSP", pkg_name)
+	return name
 end
 
 return M
