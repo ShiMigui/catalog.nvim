@@ -1,6 +1,11 @@
 ---@alias LogFunction fun(msg: string, ...: any): nil
 
-local format = require("mason-catalog.utils.format")
+local function format(scope, msg, ...)
+	if select("#", ...) > 0 then
+		msg = msg:format(...)
+	end
+	return scope .. msg
+end
 
 ---@param scope string
 ---@param level vim.log.levels
@@ -55,4 +60,4 @@ local function logger(scope)
 	return m
 end
 
-return logger
+return { logger = logger }
