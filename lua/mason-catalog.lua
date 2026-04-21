@@ -1,24 +1,42 @@
 local scope = ...
 
-local function setup(opts)
-	vim.g.mason_catalog_debug = false
-	vim.g.mason_catalog_silent = false
-	local logger = require("mason-catalog.logger").logger(scope)
-	logger.dbg("Starting setup")
+local setup_opts
+local function setup()
+  vim.g.mason_catalog_debug = false
+  vim.g.mason_catalog_silent = false
+  local logger = require("mason-catalog.logger").logger(scope)
+  local provider = require("lua.mason-catalog.core.provider")
+  logger.dbg("starting")
 
-	if opts.lsp then
-		local lsp = require("mason-catalog.core.lsp")
-		lsp(opts.lsp)
-	end
+  if setup_opts.lsp then
+    local lsp = require("mason-catalog.core.lsp")
+    lsp(setup_opts.lsp)
+  end
 
-	vim.opt.rtp:prepend(vim.fn.getcwd())
+  for _, pkg in ipairs(setup_opts.ensure_installed or {}) do
+    local p = provider.resolve(pkg)
+    if p then
+      p.install()
+    end
+  end
+
+  for _, integration in ipairs(setup_opts.integrations or {}) do
+    local p = logger.try_require("mason-catalog.integration." .. integration)
+    if p then
+      p()
+    end
+  end
 end
 
 return {
-	setup = function(opts)
-		opts = opts or {}
-		setup({
-			lsp = { extensions = { { "lua", lsp = { "lua-language-server", "emmylua_ls" } } } },
-		})
-	end,
+  setup = function(opts)
+    setup_opts = opts or {}
+    local registry = require("mason-registry")
+
+    if #registry.get_all_package() then
+      setup()
+    else
+      registry.refresh(setup)
+    end
+  end,
 }
