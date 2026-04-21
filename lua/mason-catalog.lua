@@ -43,7 +43,7 @@ return {
 
 		local registry = require("mason-registry")
 
-		if registry.get_all_packages and registry.get_all_packages() > 0 then
+		if registry.get_all_packages and #registry.get_all_packages() > 0 then
 			setup(opts)
 		else
 			registry.refresh(function()
