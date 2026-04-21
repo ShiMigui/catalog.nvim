@@ -21,7 +21,7 @@ local function setup()
 	end
 
 	for _, integration in ipairs(setup_opts.integrations or {}) do
-		local p = logger.try_require("mason-catalog.integration." .. integration)
+		local p = logger.try_require("mason-catalog.integrations." .. integration)
 		if p then
 			p()
 		end
