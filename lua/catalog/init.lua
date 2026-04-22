@@ -9,7 +9,7 @@ return {
 		opts = opts or {}
 
 		opts.log = opts.log or {}
-		local log = log_setup.set_log(opts.log, not opts.silent, opts.debug).log(scope)
+		local log = log_setup.set_log(opts.log, opts.show_logs, opts.debug).log(scope)
 
 		log.header(true)
 		if opts.lsp then
@@ -23,7 +23,6 @@ return {
 		if opts.ensure_installed then
 			require("catalog.ensure_installed").init(opts.ensure_installed)
 		end
-
 		log.header(false)
 	end,
 }
