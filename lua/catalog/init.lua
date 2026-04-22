@@ -15,6 +15,15 @@ return {
 		if opts.lsp then
 			require("catalog.lsp").init(opts.lsp)
 		end
+
+		if opts.conform then
+			require("catalog.conform").init(opts.conform)
+		end
+
+		if opts.ensure_installed then
+			require("catalog.ensure_installed").init(opts.ensure_installed)
+		end
+
 		log.header(false)
 	end,
 }
