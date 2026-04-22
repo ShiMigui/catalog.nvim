@@ -1,4 +1,4 @@
-local logger = require("mason-catalog.logger").logger(...)
+local logger = require("mason-catalog.logger").scope(...)
 local registry = require("mason-registry")
 
 ---@type cat.provider
@@ -19,12 +19,7 @@ return {
 			end,
 		}
 
-		local function log_install(ok, result)
-			if ok then
-				logger.inf("Package '%s' installed successfully", name)
-			else
-				logger.err("Failed to install '%s': %s", name, result)
-			end
+		local function log_install(ok)
 			pkg.installed = ok
 		end
 
