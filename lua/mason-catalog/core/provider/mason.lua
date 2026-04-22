@@ -1,4 +1,4 @@
-local logger = require("mason-catalog.logger").scope(...)
+local logger = require("mason-catalog.logger").logger(...)
 local registry = require("mason-registry")
 
 ---@type cat.provider
