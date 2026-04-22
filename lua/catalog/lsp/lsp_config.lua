@@ -9,7 +9,9 @@ return function(name, config, default)
 			return
 		end
 
-		p.install()
+		if not p.installed() then
+			p.install()
+		end
 		p.lsp.setup(default)
 		if config then
 			p.lsp.update(config)
