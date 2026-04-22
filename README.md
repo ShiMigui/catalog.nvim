@@ -10,47 +10,41 @@ Mason Catalog manages package installation (LSPs, formatters, DAPs, linters, and
 - Group-based LSP configuration
 - Seamless integration with Mason
 - Integrations with other plugins, for now: `ensure_conform_formatters`
-- Extension-based configuration in `by_group`
 
 ## Installation
-
-> [!NOTE]
-> Mason should be set up before using Mason Catalog.
 
 ### lazy.nvim
 
 ```lua
 {
-    "ShiMigui/mason-catalog.nvim",
-    branch = "main",
-    dependencies = { { "williamboman/mason.nvim", opts = {} } },
+	"ShiMigui/mason-catalog.nvim",
+	dependencies = {
+		"neovim/nvim-lspconfig",
+		{ "mfussenegger/nvim-jdtls", ft = "java" },
+		{ "williamboman/mason.nvim", config = true },
+	}
 }
 ```
 
 ## Configuration
 ```lua
-{
-    lsp = {
-        default_config = {
-            capabilities = require("cmp_nvim_lsp").default_capabilities()
-        }, -- Assuming you're using 'hrsh7th/nvim-cmp'
-        by_group = {
-            {
-                filetypes = { "javascript", "javascriptreact", "typescriptreact", "typescript" },
-                lsps = { "typescript-language-server", "eslint-lsp" },
-            },
-            { filetypes = { "json", "jsonc" }, lsps = { "json-lsp" } },
-            { filetypes = { "markdown" }, lsps = { "marksman" } },
-        },
-        by_ft = {
-            lua = { "lua-language-server" }, -- or simply: lua = "lua-language-server"
-        },
-        auto_enable = true, -- creates autocmd and enables LSP for the first opened buffer
-    },
-    debug = false, -- disables debug logs (if you don't enjoy chaos)
-    silent = true, -- disables all logs (recommended for sanity)
+require("mason-catalog").setup({
+    silent = true,
     integrations = { "ensure_conform_formatters" },
-}
+    ensure_installed = { "java-debug-adapter", "java-test", "pgformatter" },
+    lsp = {
+        default_config = require("settings").lsp,
+        extensions = {
+            { "js", "ts", "jsx", "tsx", lsp = { "typescript-language-server", "eslint-lsp" } },
+            { "json", "jsonc", lsp = "json-lsp" },
+            { "md", lsp = "marksman" },
+        },
+        filetypes = {
+            { "lua", lsp = "lua-language-server" },
+            { "php", lsp = { "intelephense", "phpactor" } },
+        },
+    },
+})
 ```
 
 ---
