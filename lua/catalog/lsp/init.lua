@@ -1,29 +1,6 @@
 local log = require("catalog.log").log(...)
 local provider = require("catalog.provider")
 
----@alias fts_by_lsp table<catalog.pkg.name, string[]> -- fts by lsp
-
----@alias catalog.entry.lsp.spec.lsp_list string|string[]|table<string, catalog.lsp.config>
-
----{"lua", lsp="lua-language-server"}
----{"js", "jsx", "ts", "tsx", lsp={"eslint-lsp", "typescript-language-server"}}
----{"php", lsp={intelephense={...}}}
----@class catalog.entry.lsp.spec
----@field lsp? catalog.entry.lsp.spec.lsp_list
----@field [integer] string  -- filetypes
-
----{
----     config = {...}|nil,
----
----     {"lua", lsp="lua-language-server"},
----     {"js", "jsx", "ts", "tsx", lsp={"eslint-lsp", "typescript-language-server"}},
----     {"php", lsp={intelephense={...}}},
----     ...
----}
----@class catalog.entry.lsp
----@field config? catalog.lsp.config
----@field [integer] catalog.entry.lsp.spec
-
 local function lsp_config(name, config, default)
 	local p = provider.resolve(name)
 	if p then
@@ -139,8 +116,13 @@ return {
 		---@type fts_by_lsp
 		local map = {}
 
+		opts.config = nil
 		for i, spec in ipairs(opts) do
 			configure_spec(i, spec, config, map)
+			opts[i] = nil
+		end
+		for ft, lsp in pairs(opts) do
+			configure_spec(ft, { ft, lsp = lsp }, config, map)
 		end
 
 		for name, fts in pairs(map) do

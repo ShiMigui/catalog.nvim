@@ -1,0 +1,24 @@
+---@meta
+---
+---@alias fts_by_lsp table<catalog.pkg.name, string[]> -- fts by lsp
+---
+---@alias catalog.entry.lsp.spec.lsp_list string|string[]|table<string, catalog.lsp.config>
+---
+---{"lua", lsp="lua-language-server"}
+---{"js", "jsx", "ts", "tsx", lsp={"eslint-lsp", "typescript-language-server"}}
+---{"php", lsp={intelephense={...}}}
+---@class catalog.entry.lsp.spec
+---@field lsp? catalog.entry.lsp.spec.lsp_list
+---@field [integer] string  -- filetypes
+---
+---{
+---     config = {...}|nil,
+---
+---     {"lua", lsp="lua-language-server"},
+---     {"js", "jsx", "ts", "tsx", lsp={"eslint-lsp", "typescript-language-server"}},
+---     {"php", lsp={intelephense={...}}},
+---     ...
+---}
+---@class catalog.entry.lsp
+---@field config? catalog.lsp.config
+---@field [integer] catalog.entry.lsp.spec
