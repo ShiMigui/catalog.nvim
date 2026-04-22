@@ -9,7 +9,8 @@ return {
 		opts = opts or {}
 
 		opts.log = opts.log or {}
-		local log = log_setup.set_log(opts.log, opts.show_logs, opts.debug).log(scope)
+		local show_errors = opts.silent_errors ~= true
+		local log = log_setup.set_log(opts.log, show_errors, opts.debug).log(scope)
 
 		log.header(true)
 		if opts.lsp then
