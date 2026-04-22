@@ -68,6 +68,7 @@ lsp = {
 
 #### Notes
 
+* You can also configure individual LSPs using: `["lua-language-server"] = {...}`
 * Keys like `lua = "lua-language-server"` map filetypes to LSPs
 * List entries allow multiple filetypes and multiple LSPs
 * Tables allow per-LSP configuration
