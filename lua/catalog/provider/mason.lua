@@ -1,11 +1,10 @@
 local log = require("catalog.log").log(...)
 local registry = require("mason-registry")
-local lsp_node = require("catalog.provider.lsp_node")
+local lsp = require("catalog.provider.lsp")
 
 ---@type catalog.provider
 return {
 	resolve = function(str)
-		log.dbg("Trying to get %s", str)
 		local ok, msn_pkg = pcall(registry.get_package, str)
 
 		if not ok then
@@ -20,11 +19,17 @@ return {
 				return msn_pkg:is_installed()
 			end,
 			install = function()
-				msn_pkg:install()
+				if msn_pkg:is_installed() then
+					log.dbg("Package %s is beign installed", str)
+				elseif msn_pkg:is_installed() then
+					log.dbg("Package %s is already installed", str)
+				else
+					msn_pkg:install()
+				end
 			end,
 		}
 		if nvim and nvim.lspconfig then
-			pkg.lsp = lsp_node.new(nvim.lspconfig)
+			pkg.lsp = lsp.new(nvim.lspconfig)
 		end
 
 		return pkg
