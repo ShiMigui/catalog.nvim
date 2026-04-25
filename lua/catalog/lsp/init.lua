@@ -1,11 +1,11 @@
 local configure_spec = require("catalog.lsp.configure_spec")
-local provider = require("catalog.provider")
 local log = require("catalog.log").log(...)
 
 ---@type catalog.integration
 return {
 	---@param opts any|catalog.entry.lsp
 	init = function(opts)
+		log.header(true)
 		if type(opts) ~= "table" then
 			log.err("Options given wasn't a table, nothing to do!")
 			return
@@ -13,8 +13,6 @@ return {
 
 		local config = opts.config or { capabilities = vim.lsp.protocol.make_client_capabilities() }
 
-		log.header(true)
-		---@type fts_by_lsp
 		local map = {}
 
 		opts.config = nil
@@ -26,19 +24,15 @@ return {
 			configure_spec(ft, { ft, lsp = lsp }, config, map)
 		end
 
-		for name, fts in pairs(map) do
-			log.dbg("Turning on %s", name)
-			local p = provider.resolve(name)
-			if p and p.lsp and p.installed() then
-				local lsp = p.lsp.name
-				---@diagnostic disable-next-line: missing-fields
-				p.lsp.update({ filetypes = fts })
-				vim.lsp.config(lsp, p.lsp.config)
-				vim.lsp.enable(lsp)
-				log.dbg("%s is running", name)
-			end
-		end
+		for name, m in pairs(map) do
+			local lsp = m[3]
+			local fts = m[2]
 
+			lsp.update({ filetypes = fts })
+			vim.lsp.config(lsp, lsp.config)
+			vim.lsp.enable(lsp)
+			log.dbg("%s is running", name)
+		end
 		log.header(false)
 	end,
 }
