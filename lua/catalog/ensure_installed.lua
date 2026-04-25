@@ -4,6 +4,7 @@ local log = require("catalog.log").log(...)
 ---@type catalog.integration
 return {
 	init = function(opts)
+		log.header(true)
 		if type(opts) == "string" then
 			opts = { opts }
 		elseif not vim.islist(opts) then
@@ -18,5 +19,6 @@ return {
 				p.install()
 			end
 		end
+		log.header(false)
 	end,
 }
