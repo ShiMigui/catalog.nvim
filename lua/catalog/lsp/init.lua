@@ -11,11 +11,6 @@ return {
 			return
 		end
 
-		if #opts == 0 then
-			log.err("No LSPs specs given, nothing to do!")
-			return
-		end
-
 		local config = opts.config or { capabilities = vim.lsp.protocol.make_client_capabilities() }
 
 		log.header(true)
@@ -29,6 +24,11 @@ return {
 		end
 		for ft, lsp in pairs(opts) do
 			configure_spec(ft, { ft, lsp = lsp }, config, map)
+		end
+
+		if #map == 0 then
+			log.err("No LSPs specs given, nothing to do!")
+			return
 		end
 
 		for name, fts in pairs(map) do
