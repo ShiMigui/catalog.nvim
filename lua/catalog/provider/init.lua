@@ -22,18 +22,9 @@ local function resolve(name)
 end
 
 ---@class catalog.main_provider: catalog.provider
----@field install fun(str: string|catalog.pkg.name): catalog.pkg?
 ---@field set_providers fun(new: catalog.provider[]): nil
 return {
 	resolve = resolve,
-
-	install = function(name)
-		local p = resolve(name)
-		if p and not p.installed() then
-			p.install()
-		end
-		return p
-	end,
 
 	---@param new catalog.provider[]
 	set_providers = function(new)
