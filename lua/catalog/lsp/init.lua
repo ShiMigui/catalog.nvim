@@ -26,11 +26,6 @@ return {
 			configure_spec(ft, { ft, lsp = lsp }, config, map)
 		end
 
-		if #map == 0 then
-			log.err("No LSPs specs given, nothing to do!")
-			return
-		end
-
 		for name, fts in pairs(map) do
 			log.dbg("Turning on %s", name)
 			local p = provider.resolve(name)
