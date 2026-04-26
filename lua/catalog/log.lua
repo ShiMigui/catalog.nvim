@@ -31,16 +31,17 @@ local M = {}
 M.log = function(scope)
 	local msg_scope = "[" .. scope .. "] "
 
+	local start = true
 	local dbg = notify_builder(lvls.DEBUG, scope, msg_scope)
 	return {
 		dbg = dbg,
 		wrn = notify_builder(lvls.WARN, scope, msg_scope),
 		err = notify_builder(lvls.ERROR, scope, msg_scope),
 
-		---@param start boolean
-		header = function(start)
+		header = function()
 			if start then
 				dbg("starting")
+				start = false
 			else
 				dbg("finishing")
 			end

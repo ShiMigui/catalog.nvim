@@ -13,7 +13,7 @@ return {
 	---
 	---@param opts catalog.entry.lsp
 	setup = function(opts)
-		log.header(true)
+		log.header()
 		if type(opts) ~= "table" then
 			log.err("Options given wasn't a table, nothing to do!")
 			return
@@ -28,6 +28,6 @@ return {
 		end
 
 		registry.enable_all()
-		log.header(false)
+		log.header()
 	end,
 }

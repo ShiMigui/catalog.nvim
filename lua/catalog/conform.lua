@@ -4,7 +4,7 @@ local log = require("catalog.log").log(...)
 ---@type catalog.integration
 return {
 	setup = function()
-		log.header(true)
+		log.header()
 		local ok, conform = pcall(require, "conform")
 
 		if not ok then
@@ -23,6 +23,6 @@ return {
 				end
 			end
 		end
-		log.header(false)
+		log.header()
 	end,
 }

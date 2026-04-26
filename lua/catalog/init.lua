@@ -12,7 +12,7 @@ return {
 		local show_errors = opts.silent_errors ~= true
 		local log = log_setup.set_log(opts.log, show_errors, opts.debug).log(scope)
 
-		log.header(true)
+		log.header()
 		if opts.lsp then
 			require("catalog.lsp.config").setup(opts.lsp_config)
 			require("catalog.lsp").setup(opts.lsp)
@@ -25,6 +25,6 @@ return {
 		if opts.ensure_installed then
 			require("catalog.ensure_installed").setup(opts.ensure_installed)
 		end
-		log.header(false)
+		log.header()
 	end,
 }
