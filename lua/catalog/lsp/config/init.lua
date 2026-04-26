@@ -5,5 +5,7 @@ return {
 	setup = function(opts)
 		lsp_default_config = opts or { capabilities = vim.lsp.protocol.make_client_capabilities() }
 	end,
-	config = lsp_default_config,
+	config = function()
+		return lsp_default_config
+	end,
 }
