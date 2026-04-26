@@ -11,8 +11,7 @@ local log = require("catalog.log").log(...)
 ---
 ---@param index any
 ---@param spec catalog.entry.lsp.spec
----@param config catalog.lsp.config
-return function(index, spec, config)
+return function(index, spec)
 	local t = type(spec)
 	if t ~= "table" then
 		log.wrn("Spec [%d] is not a table, got %s", index, t)
@@ -22,7 +21,7 @@ return function(index, spec, config)
 		return
 	end
 
-	local lsps = prepare(spec.lsp, config)
+	local lsps = prepare(spec.lsp)
 	if not lsps then
 		log.err("There is no valid LSPs to assigns in Spec [%d]", index)
 		return

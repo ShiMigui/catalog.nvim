@@ -19,13 +19,11 @@ return {
 			return
 		end
 
-		local config = require("catalog.lsp.config").config()
-
 		for i, spec in pairs(opts) do
 			if type(i) == "string" then
-				process(i, { i, lsp = spec }, config)
+				process(i, { i, lsp = spec })
 			else
-				process(i, spec, config)
+				process(i, spec)
 			end
 		end
 

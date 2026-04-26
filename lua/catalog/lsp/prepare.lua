@@ -1,11 +1,11 @@
+local default = require("catalog.lsp.config").config()
 local log = require("catalog.log").log(...)
 local provider = require("catalog.provider")
 
 ---@param name catalog.pkg.name
 ---@param config? catalog.lsp.config
----@param default catalog.lsp.config
 ---@return catalog.lsp?
-local function lsp_config(name, config, default)
+local function provide(name, config)
 	local p = provider.resolve(name)
 	if p then
 		if p.lsp then
@@ -21,24 +21,24 @@ local function lsp_config(name, config, default)
 end
 
 local TABLE_LSP_ENTRIES = {
-	string_table = lsp_config,
-	number_string = function(_, name, default)
-		return lsp_config(name, nil, default)
+	string_table = provide,
+	number_string = function(_, name)
+		return provide(name, nil)
 	end,
 }
 
 local TYPE_ENTRIES = {
-	string = function(name, config)
-		local p = lsp_config(name, nil, config)
+	string = function(name)
+		local p = provide(name, nil)
 		return p and { p } or nil
 	end,
-	table = function(tbl, config)
+	table = function(tbl)
 		local list = {}
 		for k, v in pairs(tbl) do
 			local tk, tv = type(k), type(v)
 			local handler = TABLE_LSP_ENTRIES[tk .. "_" .. tv]
 			if handler then
-				local p = handler(k, v, config)
+				local p = handler(k, v)
 				if p then
 					table.insert(list, p)
 				end
@@ -58,13 +58,12 @@ local TYPE_ENTRIES = {
 ---- Apply default and custom configurations
 ---
 ---@param lsp catalog.entry.lsp.spec.lsp_list
----@param config catalog.lsp.config
 ---@return catalog.lsp[]|nil
-return function(lsp, config)
+return function(lsp)
 	local t = type(lsp)
 	local handler = TYPE_ENTRIES[t]
 	if handler then
-		return handler(lsp, config)
+		return handler(lsp)
 	end
 	log.err("Invalid type for lsps, expected string/table, got %s", t)
 end
