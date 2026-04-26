@@ -19,8 +19,7 @@ return {
 			return
 		end
 
-		local config = opts.config or { capabilities = vim.lsp.protocol.make_client_capabilities() }
-		opts.config = nil
+		local config = require("catalog.lsp.config").config
 		for i, spec in pairs(opts) do
 			if type(i) == "string" then
 				process(i, { i, lsp = spec }, config)
