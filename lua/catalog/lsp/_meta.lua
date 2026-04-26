@@ -1,0 +1,38 @@
+---@alias catalog.entry.lsp.spec.lsp_list
+---| string                                  -- single LSP name
+---| string[]                                -- list of LSP names
+---| table<string, catalog.lsp.config>       -- map of LSP name -> custom config
+
+---Represents a single LSP specification entry.
+---
+---Each entry defines:
+---- One or more filetypes (array part)
+---- One or more LSPs (via `lsp` field)
+---
+---Examples:
+---  {"lua", lsp = "lua-language-server"}
+---  {"js", "ts", lsp = {"eslint-lsp", "typescript-language-server"}}
+---  {"php", lsp = { intelephense = { settings = {...} } }}
+---@class catalog.entry.lsp.spec
+---@field lsp catalog.entry.lsp.spec.lsp_list   -- LSP(s) to associate
+---@field [integer] string                     -- filetypes or extensions
+---
+---Top-level LSP configuration entry.
+---
+---Supports:
+---- Global LSP config (`config`)
+---- Multiple spec entries (array or map style)
+---
+---Examples:
+---{
+---  config = {...},
+---
+---  {"lua", lsp = "lua-language-server"},
+---  {"ts", lsp = "typescript-language-server"},
+---
+---  lua = "lua-language-server",
+---}
+---@class catalog.entry.lsp
+---@field config? catalog.lsp.config
+---@field [integer] catalog.entry.lsp.spec
+---@field [string] catalog.entry.lsp.spec.lsp_list
