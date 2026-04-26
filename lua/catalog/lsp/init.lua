@@ -12,7 +12,7 @@ return {
 	---- Enable all configured LSPs
 	---
 	---@param opts catalog.entry.lsp
-	init = function(opts)
+	setup = function(opts)
 		log.header(true)
 		if type(opts) ~= "table" then
 			log.err("Options given wasn't a table, nothing to do!")

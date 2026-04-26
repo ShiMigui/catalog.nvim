@@ -3,7 +3,7 @@ local log = require("catalog.log").log(...)
 
 ---@type catalog.integration
 return {
-	init = function()
+	setup = function()
 		log.header(true)
 		local ok, conform = pcall(require, "conform")
 

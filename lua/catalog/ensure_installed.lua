@@ -3,7 +3,7 @@ local log = require("catalog.log").log(...)
 
 ---@type catalog.integration
 return {
-	init = function(opts)
+	setup = function(opts)
 		log.header(true)
 		if type(opts) == "string" then
 			opts = { opts }
