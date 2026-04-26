@@ -14,7 +14,7 @@ return {
 
 		log.header()
 		if opts.lsp then
-			require("catalog.lsp.config").setup(opts.lsp_config)
+			require("catalog.lsp.config").setup({ config = opts.lsp_config, capabilites = opts.lsp_capability_provider })
 			require("catalog.lsp").setup(opts.lsp)
 		end
 
