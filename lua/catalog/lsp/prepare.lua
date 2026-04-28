@@ -10,10 +10,7 @@ local function provide(name, config)
 	if p then
 		if p.lsp then
 			p.install()
-			p.lsp.setup(default)
-			if config then
-				p.lsp.update(config)
-			end
+			p.lsp.update(config or {}, default)
 			return p.lsp
 		end
 		log.err("Package '%s' is not a LSP", name)

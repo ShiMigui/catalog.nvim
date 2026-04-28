@@ -11,13 +11,9 @@
 ---@field name catalog.lsp.name
 ---@field config? catalog.lsp.config
 ---
----Called when NO user configuration is provided.
----Use this to apply default configuration.
----@field setup fun(default: catalog.lsp.config): nil
----
 ---Called when a configuration already exists.
 ---Use this to extend or override behavior.
----@field update fun(cfg: catalog.lsp.config): nil
+---@field update fun(cfg: catalog.lsp.config, default: catalog.lsp.config): nil
 ---
 ---Identifier for a package.
 ---@class catalog.pkg.name: string
