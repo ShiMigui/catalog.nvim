@@ -19,7 +19,7 @@ return {
 				return msn_pkg:is_installed()
 			end,
 			install = function()
-				if msn_pkg:is_installed() then
+				if msn_pkg:is_installing() then
 					log.dbg("Package %s is beign installed", str)
 				elseif msn_pkg:is_installed() then
 					log.dbg("Package %s is already installed", str)
