@@ -14,8 +14,10 @@ return {
 
 		log.header()
 		if opts.lsp then
-			require("catalog.lsp.config").setup({ config = opts.lsp_config, capabilites = opts.lsp_capability_provider })
-			require("catalog.lsp").setup(opts.lsp)
+			local lsp = opts.lsp
+			local config, cap_provider, list = lsp.config, lsp.capability_provider, lsp.list
+			require("catalog.lsp.config").setup({ config = config, capabilites = cap_provider })
+			require("catalog.lsp").setup(list)
 		end
 
 		if opts.conform then
