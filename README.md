@@ -50,16 +50,15 @@ Installs, configures, and enables LSP servers based on filetypes.
 
 ```lua
 lsp = {
-	config = require("settings").lsp,
-
-	md = "marksman",
-	lua = "lua-language-server",
-	sql = "postgres-language-server",
-	php = { "intelephense", "phpactor" },
-	dockerfile = "dockerfile-language-server",
-
-	{ "json", "jsonc", lsp = "json-lsp" },
-	{ "js", "ts", "jsx", "tsx", lsp = { "typescript-language-server", "eslint-lsp" }},
+    capability_provider = "blink.cmp", -- loads capability automatically from "blink.cmp" or "nvim-cmp".
+    config = {...}, -- your default config for all LSPs
+    list = {
+        md = "marksman",
+        lua = "lua-language-server",
+        php = { "intelephense", "phpactor" },
+        { "json", "jsonc", lsp = "json-lsp" },
+        { "js", "ts", "jsx", "tsx", lsp = { "typescript-language-server", "eslint-lsp" }},
+    }
 }
 ```
 
