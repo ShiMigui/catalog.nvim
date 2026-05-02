@@ -33,15 +33,12 @@ To use it, add Mason as a dependency and ensure the registry is ready before cal
 Then:
 ```lua
 config = function(_, opts)
-	local registry = require("mason-registry")
+    local r = require("mason-registry") -- It's needed since Mason registry should not be cached yet
+    local function run()
+        require("catalog").setup(opts)
+    end
 
-	if #registry.get_all_packages() > 0 then
-		require("catalog").setup(opts)
-	else
-		registry.refresh(function()
-			require("catalog").setup(opts)
-		end)
-	end
+    return #r.get_all_packages() > 0 and run() or r.refresh(run)
 end
 ```
 
