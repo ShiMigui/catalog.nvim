@@ -18,27 +18,18 @@ local CAPABILITY_PROVIDERS = {
 ---@field config? catalog.lsp.config
 ---@field capabilities? "nvim-cmp"|"blink.cmp"
 
-local function resolve_capabilities(cap, user_config)
-	if type(cap) ~= "string" then
-		return
-	end
-
+local function base(cap)
 	local default = vim.lsp.protocol.make_client_capabilities()
 	local fn = CAPABILITY_PROVIDERS[cap]
-	if not fn then
-		log.err("Invalid capabilities provider %s", cap)
-		return default
-	end
-
-	local ok, m = fn()
-	if not ok or not m then
+	if fn then
+		local ok, m = fn()
+		if ok and m then
+			return vim.tbl_deep_extend("force", default, m)
+		end
 		log.err("Capability provider not installed or inaccessible! %s", cap)
-		return default
 	end
 
-	local user_caps = user_config and user_config.capabilities or {}
-
-	return vim.tbl_deep_extend("force", default, m, user_caps)
+	return default
 end
 
 ---@type catalog.integration
@@ -46,11 +37,11 @@ return {
 	---Stores and mutate config with default providers
 	---@param opts catalog.entry.lsp.config
 	setup = function(opts)
-		if opts then
-			local user_config = opts.config or {}
-			local capabilities = resolve_capabilities(opts.capabilities, user_config)
+		lsp_default_config = opts.config or {}
+		local capabilities = opts.capabilities
 
-			lsp_default_config = vim.tbl_deep_extend("force", user_config, { capabilities = capabilities })
+		if capabilities then
+			lsp_default_config = vim.tbl_deep_extend("force", { capabilities = base(capabilities) }, lsp_default_config)
 		end
 	end,
 	config = function()
