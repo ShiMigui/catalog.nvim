@@ -12,6 +12,7 @@ local log = {
 	[lvls.ERROR] = false,
 	[lvls.WARN] = false,
 	[lvls.DEBUG] = false,
+	[lvls.INFO] = true,
 }
 
 local function notify_builder(level, scope, msg_scope)
@@ -37,6 +38,7 @@ M.log = function(scope)
 		dbg = dbg,
 		wrn = notify_builder(lvls.WARN, scope, msg_scope),
 		err = notify_builder(lvls.ERROR, scope, msg_scope),
+		inf = notify_builder(lvls.INFO, scope, msg_scope),
 
 		header = function()
 			if start then
@@ -49,11 +51,11 @@ M.log = function(scope)
 	}
 end
 
-M.set_log = function(tbl, show_logs, debug)
+M.set_log = function(tbl, silent_logs, debug)
 	log = vim.tbl_deep_extend("force", log, tbl)
 
-	log[lvls.WARN] = show_logs
-	log[lvls.ERROR] = show_logs
+	log[lvls.WARN] = not silent_logs
+	log[lvls.ERROR] = log[lvls.WARN]
 	log[lvls.DEBUG] = debug
 
 	return M

@@ -1,33 +1,162 @@
-local registry = require("catalog.lsp.registry")
-local process = require("catalog.lsp.process")
 local log = require("catalog.log").log(...)
+local provider = require("catalog.provider")
+local default = require("catalog.lsp.config").config()
+
+--- Catalog LSP configuration.
+---
+--- Supports two declaration styles:
+---
+--- Array entries:
+---
+--- ```lua
+--- {
+---     "lua-language-server",
+---     "typescript-language-server",
+--- }
+--- ```
+---
+--- Keyed entries with custom configuration:
+---
+--- ```lua
+--- {
+---     ["yaml-language-server"] = {
+---         settings = {
+---             yaml = {
+---                 schemas = {},
+---             },
+---         },
+---     },
+--- }
+--- ```
+---
+--- Both styles may be combined:
+---
+--- ```lua
+--- {
+---     "lua-language-server",
+---     "typescript-language-server",
+---
+---     ["yaml-language-server"] = {
+---         settings = {
+---             yaml = {
+---                 schemas = {},
+---             },
+---         },
+---     },
+--- }
+--- ```
+---
+---@class catalog.entry.lsp
+---@field [integer] catalog.pkg.name
+---@field [string] catalog.lsp.config
+
+--- Registered LSP configurations.
+---
+--- Key: LSP name
+--- Value: Final merged configuration
+---
+---@type table<catalog.lsp.name, catalog.lsp.config>
+local index = {}
+
+vim.api.nvim_create_user_command("CatalogShowLSPs", function()
+	local ordered = vim.tbl_keys(index)
+	table.sort(ordered)
+	for _, lsp_name in ipairs(ordered) do
+		log.inf("%s", lsp_name)
+	end
+end, { desc = "Show configured LSP servers" })
+
+--- Resolve, install and configure a package as an LSP.
+---
+---@param name catalog.pkg.name
+---@param config? catalog.lsp.config
+---@return catalog.lsp|nil
+local function provide(name, config)
+	local pkg = provider.resolve(name)
+
+	if not pkg then
+		return nil
+	elseif not pkg.lsp then
+		log.err("Package '%s' is not a LSP", name)
+		return nil
+	end
+
+	pkg.install()
+	pkg.lsp:update(config or {}, default)
+	return pkg.lsp
+end
+
+local LSP_HANDLERS = {
+
+	--- Handles:
+	---
+	--- ```lua
+	--- {
+	---     "lua-language-server"
+	--- }
+	--- ```
+	---
+	---@param _ integer
+	---@param pkg_name catalog.pkg.name
+	---@return catalog.lsp|nil
+	number_string = function(_, pkg_name)
+		return provide(pkg_name)
+	end,
+
+	--- Handles:
+	---
+	--- ```lua
+	--- {
+	---     ["yaml-language-server"] = {
+	---         settings = {},
+	---     }
+	--- }
+	--- ```
+	---
+	---@param pkg_name catalog.pkg.name
+	---@param config catalog.lsp.config
+	---@return catalog.lsp|nil
+	string_table = function(pkg_name, config)
+		return provide(pkg_name, config)
+	end,
+}
 
 ---@type catalog.integration
 return {
-	---Entry point for catalog LSP integration.
-	---
-	---Responsibilities:
-	---- Normalize user input (array + map styles)
-	---- Process all specs
-	---- Enable all configured LSPs
+
+	--- Configure and enable all declared LSP servers.
 	---
 	---@param opts catalog.entry.lsp
 	setup = function(opts)
-		log.header()
 		if type(opts) ~= "table" then
-			log.err("Options given wasn't a table, nothing to do!")
+			log.err("Options must be a table")
 			return
 		end
 
-		for i, spec in pairs(opts) do
-			if type(i) == "string" then
-				process(i, { i, lsp = spec })
+		for k, v in pairs(opts) do
+			local signature = type(k) .. "_" .. type(v)
+			local handler = LSP_HANDLERS[signature]
+
+			if handler then
+				local lsp = handler(k, v)
+
+				if lsp then
+					index[lsp.name] = lsp.config
+				end
 			else
-				process(i, spec)
+				log.err("Invalid LSP declaration (%s)", signature)
 			end
 		end
 
-		registry.enable_all()
-		log.header()
+		log.dbg("STARTING SERVERS")
+
+		for lsp_name, config in pairs(index) do
+			log.dbg("STARTING SERVER: %s", lsp_name)
+
+			if not vim.lsp.is_enabled(lsp_name) then
+				vim.lsp.config(lsp_name, config)
+				vim.lsp.enable(lsp_name)
+			end
+		end
 	end,
 }

@@ -9,15 +9,17 @@ return {
 		opts = opts or {}
 
 		opts.log = opts.log or {}
-		local show_errors = opts.silent_errors ~= true
-		local log = log_setup.set_log(opts.log, show_errors, opts.debug).log(scope)
+		local log = log_setup.set_log(opts.log, opts.silent_errors == true, opts.debug).log(scope)
 
 		log.header()
 		if opts.lsp then
 			local lsp = opts.lsp
-			local config, cap_provider, list = lsp.config, lsp.capability_provider, lsp.list
-			require("catalog.lsp.config").setup({ config = config, capabilites = cap_provider })
-			require("catalog.lsp").setup(list)
+
+			require("catalog.lsp.config").setup({ config = lsp.config, capabilites = lsp.capability_provider })
+			lsp.capability_provider = nil
+			lsp.config = nil
+
+			require("catalog.lsp").setup(lsp)
 		end
 
 		if opts.conform then

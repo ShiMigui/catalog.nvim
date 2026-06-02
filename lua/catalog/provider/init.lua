@@ -15,7 +15,12 @@ local function resolve(name)
 		if not ok then
 			log.err("Error trying to get '%s': %s", name, p)
 		elseif p then
-			cache[name] = p or false
+			if not p then
+				log.err("Package not found: %s", name)
+				cache[name] = false
+			else
+				cache[name] = p
+			end
 			return p
 		end
 	end

@@ -13,7 +13,7 @@
 ---
 ---Called when a configuration already exists.
 ---Use this to extend or override behavior.
----@field update fun(cfg: catalog.lsp.config, default: catalog.lsp.config): nil
+---@field update fun(self: catalog.lsp, cfg: catalog.lsp.config, default: catalog.lsp.config): nil
 ---
 ---Identifier for a package.
 ---@class catalog.pkg.name: string
