@@ -12,14 +12,13 @@ return {
 		local log = log_setup.set_log(opts.log, opts.silent_errors == true, opts.debug).log(scope)
 
 		log.header()
+
+		if opts.lsp_config then
+			require("catalog.lsp.config").setup(opts.lsp_config)
+		end
+
 		if opts.lsp then
-			local lsp = opts.lsp
-
-			require("catalog.lsp.config").setup({ config = lsp.config, capabilites = lsp.capability_provider })
-			lsp.capability_provider = nil
-			lsp.config = nil
-
-			require("catalog.lsp").setup(lsp)
+			require("catalog.lsp").setup(opts.lsp)
 		end
 
 		if opts.conform then
