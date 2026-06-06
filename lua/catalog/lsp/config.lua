@@ -1,14 +1,14 @@
----@alias catalog.capability_provider
+---@alias catalog.CapabilityProvider
 ---| "blink.cmp"
 ---| "nvim-cmp"
----
----@class catalog.entry.lsp.config
----@field config? catalog.lsp.config
----@field capabilities? catalog.capability_provider
+
+---@class catalog.LspDefaultConfig
+---@field config? catalog.LspConfig
+---@field capabilities? catalog.CapabilityProvider
 
 local log = require("catalog.log").log(...)
 
----@type catalog.lsp.config
+---@type catalog.LspConfig
 local lsp_default_config = { capabilities = vim.lsp.protocol.make_client_capabilities() }
 
 ---@type table<string, fun(): table>
@@ -41,9 +41,9 @@ local function apply_provider_capabilities(provider)
 	lsp_default_config.capabilities = vim.tbl_deep_extend("force", lsp_default_config.capabilities, capabilities)
 end
 
----@type catalog.integration
+---@type catalog.Integration
 return {
-	---@param opts? catalog.entry.lsp.config
+	---@param opts? catalog.LspDefaultConfig
 	setup = function(opts)
 		if not opts then
 			return
@@ -58,7 +58,7 @@ return {
 		end
 	end,
 
-	---@return catalog.lsp.config
+	---@return catalog.LspConfig
 	config = function()
 		return lsp_default_config
 	end,

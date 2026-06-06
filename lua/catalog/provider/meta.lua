@@ -1,38 +1,21 @@
 ---@meta
----
+
 ---Alias for Neovim's LSP configuration.
----@class catalog.lsp.config: vim.lsp.config
----
----Identifier for an LSP server.
----@class catalog.lsp.name: string
----
+---@class catalog.LspConfig: vim.lsp.config
+
 ---Represents an LSP entry in the catalog.
----@class catalog.lsp
----@field name catalog.lsp.name
----@field config? catalog.lsp.config
----
----Called when a configuration already exists.
----Use this to extend or override behavior.
----@field update fun(self: catalog.lsp, cfg: catalog.lsp.config, default: catalog.lsp.config): nil
----
----Identifier for a package.
----@class catalog.pkg.name: string
----
+---@class catalog.Lsp
+---@field name string
+---@field config? catalog.LspConfig
+---@field update fun(self: catalog.Lsp, cfg: catalog.LspConfig, default: catalog.LspConfig): nil
+
 ---Represents an installable package.
----@class catalog.pkg
----@field name catalog.pkg.name
+---@class catalog.Package
+---@field name string
 ---@field installed fun(): boolean
----
----Installs the package.
----Implementation depends on the provider (e.g., mason).
 ---@field install fun(): nil
----
----Optional LSP associated with the package.
----@field lsp? catalog.lsp
----
+---@field lsp? catalog.Lsp
+
 ---Responsible for resolving and providing packages.
----@class catalog.provider
----
----Resolves a package from a string or package name.
----Returns nil if nothing is found.
----@field resolve fun(str: string|catalog.pkg.name): catalog.pkg?
+---@class catalog.Provider
+---@field resolve fun(str: string): catalog.Package?

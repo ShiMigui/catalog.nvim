@@ -3,10 +3,10 @@ local function update(self, cfg, default)
 end
 
 return {
-	---@param lsp_name catalog.lsp.name
-	---@return catalog.lsp
+	---@param lsp_name string
+	---@return catalog.Lsp
 	new = function(lsp_name)
-		---@type catalog.lsp
+		---@type catalog.Lsp
 		return { name = lsp_name, config = nil, update = update }
 	end,
 }

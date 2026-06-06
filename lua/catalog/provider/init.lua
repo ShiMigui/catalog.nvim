@@ -1,6 +1,6 @@
 local log = require("catalog.log").log(...)
 
----@type catalog.provider[]
+---@type catalog.Provider[]
 local providers = { require("catalog.provider.mason") }
 
 local cache = {}
@@ -26,12 +26,12 @@ local function resolve(name)
 	end
 end
 
----@class catalog.main_provider: catalog.provider
----@field set_providers fun(new: catalog.provider[]): nil
+---@class catalog.MainProvider: catalog.Provider
+---@field set_providers fun(new: catalog.Provider[]): nil
 return {
 	resolve = resolve,
 
-	---@param new catalog.provider[]
+	---@param new catalog.Provider[]
 	set_providers = function(new)
 		providers = new
 	end,

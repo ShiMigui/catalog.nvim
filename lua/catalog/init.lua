@@ -1,10 +1,20 @@
 local log_setup = require("catalog.log")
 local scope = (...) or "catalog"
 
----@class catalog.integration
----@field setup fun(opts: table|boolean): nil
+---@class catalog.Config
+---@field lsp? catalog.LspIntegrationConfig
+---@field lsp_config? catalog.LspDefaultConfig
+---@field conform? boolean
+---@field ensure_installed? string[]|string
+---@field silent_errors? boolean
+---@field debug? boolean
+---@field log? table
+
+---@class catalog.Integration
+---@field setup fun(opts: any): nil
 
 return {
+	---@param opts? catalog.Config
 	setup = function(opts)
 		opts = opts or {}
 

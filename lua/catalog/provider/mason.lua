@@ -2,7 +2,7 @@ local log = require("catalog.log").log(...)
 local registry = require("mason-registry")
 local lsp = require("catalog.provider.lsp")
 
----@type catalog.provider
+---@type catalog.Provider
 return {
 	resolve = function(str)
 		local ok, msn_pkg = pcall(registry.get_package, str)
@@ -12,7 +12,7 @@ return {
 		end
 
 		local nvim = msn_pkg.spec.neovim
-		---@type catalog.pkg
+		---@type catalog.Package
 		local pkg = {
 			name = str,
 			installed = function()

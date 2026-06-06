@@ -1,7 +1,7 @@
 local provider = require("catalog.provider")
 local log = require("catalog.log").log(...)
 
----@type catalog.integration
+---@type catalog.Integration
 return {
 	setup = function()
 		log.header()

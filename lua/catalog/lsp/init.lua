@@ -46,16 +46,16 @@ local default = require("catalog.lsp.config").config()
 --- }
 --- ```
 ---
----@class catalog.entry.lsp
----@field [integer] catalog.pkg.name
----@field [string] catalog.lsp.config
+---@class catalog.LspIntegrationConfig
+---@field [integer] string
+---@field [string] catalog.LspConfig
 
 --- Registered LSP configurations.
 ---
 --- Key: LSP name
 --- Value: Final merged configuration
 ---
----@type table<catalog.lsp.name, catalog.lsp.config>
+---@type table<string, catalog.LspConfig>
 local index = {}
 
 vim.api.nvim_create_user_command("CatalogShowLSPs", function()
@@ -68,9 +68,9 @@ end, { desc = "Show configured LSP servers" })
 
 --- Resolve, install and configure a package as an LSP.
 ---
----@param name catalog.pkg.name
----@param config? catalog.lsp.config
----@return catalog.lsp|nil
+---@param name string
+---@param config? catalog.LspConfig
+---@return catalog.Lsp|nil
 local function provide(name, config)
 	local pkg = provider.resolve(name)
 
@@ -97,8 +97,8 @@ local LSP_HANDLERS = {
 	--- ```
 	---
 	---@param _ integer
-	---@param pkg_name catalog.pkg.name
-	---@return catalog.lsp|nil
+	---@param pkg_name string
+	---@return catalog.Lsp|nil
 	number_string = function(_, pkg_name)
 		return provide(pkg_name)
 	end,
@@ -113,20 +113,20 @@ local LSP_HANDLERS = {
 	--- }
 	--- ```
 	---
-	---@param pkg_name catalog.pkg.name
-	---@param config catalog.lsp.config
-	---@return catalog.lsp|nil
+	---@param pkg_name string
+	---@param config catalog.LspConfig
+	---@return catalog.Lsp|nil
 	string_table = function(pkg_name, config)
 		return provide(pkg_name, config)
 	end,
 }
 
----@type catalog.integration
+---@type catalog.Integration
 return {
 
 	--- Configure and enable all declared LSP servers.
 	---
-	---@param opts catalog.entry.lsp
+	---@param opts catalog.LspIntegrationConfig
 	setup = function(opts)
 		if type(opts) ~= "table" then
 			log.err("Options must be a table")
