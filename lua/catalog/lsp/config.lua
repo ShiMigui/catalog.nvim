@@ -20,8 +20,10 @@ local function make_capabilities(provider)
 	local default = vim.lsp.protocol.make_client_capabilities()
 
 	if not provider then
+		log.dbg("Returning default capabilities, no provider given")
 		return default
 	end
+	log.dbg("Trying to load capabilities from provider '%s'", provider)
 
 	local fn = capability_providers[provider]
 
@@ -37,6 +39,7 @@ local function make_capabilities(provider)
 		return default
 	end
 
+	log.dbg("Loaded capabilities from provider '%s'", provider)
 	return vim.tbl_deep_extend("force", default, capabilities)
 end
 
@@ -44,13 +47,13 @@ end
 return {
 	---@param opts catalog.entry.lsp.config
 	setup = function(opts)
-		opts = opts or {}
+		if not opts then
+			return
+		end
 
-		lsp_default_config = vim.tbl_deep_extend("force", {
-			capabilities = make_capabilities(opts.capabilities),
-		}, opts.config or {})
+		lsp_default_config =
+			vim.tbl_deep_extend("force", { capabilities = make_capabilities(opts.capabilities) }, opts.config or {})
 	end,
-
 	config = function()
 		return lsp_default_config
 	end,
