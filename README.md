@@ -1,6 +1,6 @@
 # catalog.nvim
 
-`catalog.nvim` is a plugin that automates package installation and setup through a provider system.
+`catalog.nvim` is a Neovim plugin that automates package installation and setup through a provider system.
 
 It acts as an orchestration layer between package managers (providers) and integrations such as LSPs and formatters.
 
@@ -14,6 +14,7 @@ It acts as an orchestration layer between package managers (providers) and integ
     },
     opts = {
         silent_errors = false, -- disable error/warning notifications
+        debug = false,         -- enable debug logging
     },
 }
 ```
@@ -25,16 +26,20 @@ Example using Mason and LSP integration:
 ```lua
 {
     "ShiMigui/catalog.nvim",
-
     dependencies = {
         { "williamboman/mason.nvim", opts = {} },
         "neovim/nvim-lspconfig",
     },
-
     opts = {
-        lsp = ...,
+        lsp = {
+            "lua-language-server",
+            ["yaml-language-server"] = {
+                settings = {
+                    yaml = { schemas = {} },
+                },
+            },
+        },
     },
-
     config = function(_, opts)
         local registry = require("mason-registry")
 
@@ -42,76 +47,60 @@ Example using Mason and LSP integration:
             require("catalog").setup(opts)
         end
 
-        return #registry.get_all_packages() > 0
-            and run()
-            or registry.refresh(run)
+        -- Ensure Mason registry is loaded before setup
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
     end,
 }
 ```
 
-## Providers
+## Configuration
 
-A provider is responsible for resolving and installing packages.
+The `setup` function accepts a `catalog.Config` table:
 
-Providers abstract package management, allowing Catalog to work independently from a specific backend.
-
-### Mason Provider
-
-The built-in Mason provider (`catalog.provider.mason`) integrates with Mason.nvim.
-
-Add Mason as a dependency:
-
-```lua
-{
-    "williamboman/mason.nvim",
-    opts = {},
-}
-```
-
-Then ensure the Mason registry is loaded before calling `catalog.setup()`:
-
-```lua
-config = function(_, opts)
-    local registry = require("mason-registry")
-
-    local function run()
-        require("catalog").setup(opts)
-    end
-
-    return #registry.get_all_packages() > 0
-        and run()
-        or registry.refresh(run)
-end
-```
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `lsp` | `catalog.LspIntegrationConfig` | List of LSPs to install and configure. |
+| `lsp_config` | `catalog.LspDefaultConfig` | Global configuration for all LSPs. |
+| `conform` | `boolean` | Automatically install formatters from `conform.nvim`. |
+| `ensure_installed` | `string[]\|string` | Packages to install without setup. |
+| `silent_errors` | `boolean` | Disable error notifications. |
+| `debug` | `boolean` | Enable debug logging. |
 
 ## Integrations
 
 ### LSP
 
-Installs, configures and enables language servers using Neovim's built-in LSP client.
+Installs, configures, and enables language servers using Neovim's built-in LSP client.
 
 ```lua
 lsp = {
-    capability_provider = "blink.cmp",
-    config = { capabilities = {} },
+    -- Keyed entries for custom configuration
+    ["lua-language-server"] = {
+        settings = { Lua = { diagnostics = { globals = { "vim" } } } }
+    },
+
+    -- Array entries for default configuration
     "marksman",
-    "lua-language-server",
     "intelephense",
-    "phpactor",
-    "json-lsp",
-    "typescript-language-server",
-    "eslint-lsp",
-    ["yaml-language-server"] = {...},
 }
 ```
 
-#### LSP Notes
+#### Global LSP Config
 
-* String entries enable an LSP using the default configuration.
-* Keyed entries allow per-server configuration overrides.
-* All LSPs inherit the configuration provided in `lsp.config`.
-* Custom server configurations are merged with the global configuration.
-* When the same server is declared multiple times, the last configuration wins.
+You can provide global defaults for all LSPs:
+
+```lua
+lsp_config = {
+    capabilities = "blink.cmp", -- or "nvim-cmp"
+    config = {
+        -- Base vim.lsp.config for all servers
+    },
+}
+```
 
 ### Conform
 
@@ -121,11 +110,11 @@ Automatically installs formatters configured in `conform.nvim`.
 conform = true
 ```
 
-**Important:** `conform.nvim` must be loaded before `catalog.setup()`.
+**Note:** `conform.nvim` must be loaded before `catalog.setup()`.
 
 ### Ensure Installed
 
-Installs packages without enabling any integration.
+Installs packages without enabling any integration. Useful for CLI tools.
 
 ```lua
 ensure_installed = {
@@ -133,37 +122,31 @@ ensure_installed = {
 }
 ```
 
-Useful for tools that do not require additional setup.
+## Advanced Usage
 
-## Provider Interface
+### Provider Interface
 
-A provider must implement:
+A provider is responsible for resolving packages. Custom providers can be registered.
 
 ```lua
----@class catalog.provider
----@field resolve fun(name: string): catalog.pkg?
+---@class catalog.Provider
+---@field resolve fun(name: string): catalog.Package?
 ```
+
+### Package Interface
 
 Resolved packages follow this interface:
 
 ```lua
----@class catalog.pkg
+---@class catalog.Package
 ---@field name string
 ---@field installed fun(): boolean
 ---@field install fun(): nil
----@field lsp? catalog.lsp
+---@field lsp? catalog.Lsp
 ```
 
-The `lsp` field is optional and is only present when the package provides a language server.
+## Design Principles
 
-## Design Notes
-
-* Providers are responsible for package resolution and installation.
-* Integrations define behavior on top of providers.
-* Catalog focuses on orchestration rather than implementation details.
-* Package installation is performed lazily when required by an integration.
-* New providers and integrations can be added independently.
-* Catalog remains provider-agnostic whenever possible.
-
-```
-```
+* **Lazy Installation:** Packages are only installed when required by an integration.
+* **Provider Agnostic:** Catalog works with any provider implementing the interface (Mason is built-in).
+* **Orchestration First:** Focuses on connecting packages to integrations rather than implementing the setup logic itself.
