@@ -447,6 +447,24 @@ providers.set_providers({ local_provider, mason_provider })
 * **Provider Agnostic:** Catalog works with any provider implementing the interface (Mason is built-in).
 * **Orchestration First:** Focuses on connecting packages to integrations rather than implementing the setup logic itself.
 
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Development setup
+- Testing requirements (80% minimum coverage)
+- Commit conventions (Conventional Commits)
+- Pull request process
+
+### AI Agents
+
+This project includes guidelines for AI agents in [AGENTS.md](AGENTS.md). All AI agents working on this project must follow these guidelines, which include:
+
+- Reading files before modifying
+- Running tests before committing
+- Following existing code patterns
+- Not modifying tests unless explicitly requested
+
 ## Troubleshooting
 
 ### LSP not connecting

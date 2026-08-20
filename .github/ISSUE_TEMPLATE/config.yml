@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/ShiMigui/catalog.nvim#readme
+    about: Check the documentation before opening an issue
+  - name: Contributing
+    url: https://github.com/ShiMigui/catalog.nvim/blob/main/CONTRIBUTING.md
+    about: Read the contributing guide before submitting a PR
