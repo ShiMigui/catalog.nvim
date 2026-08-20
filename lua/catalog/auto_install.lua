@@ -143,9 +143,16 @@ local function install_and_register(ft, tools, tool_type, register)
 	for _, tool in ipairs(tools) do
 		local p = resolve_package(tool, ft)
 		if p then
-			install_if_needed(p)
-			register(tool, ft)
-			log.dbg("Auto-install %s '%s' for filetype '%s'", tool_type, tool, ft)
+			if p.installed() then
+				-- Already installed: register immediately
+				register(tool, ft)
+				log.dbg("Auto-install %s '%s' for filetype '%s' (already installed)", tool_type, tool, ft)
+			else
+				-- Not installed: start install, registration happens via
+				-- mason-registry package:install:success event listener
+				install_if_needed(p)
+				log.dbg("Auto-install %s '%s' for filetype '%s' (installing...)", tool_type, tool, ft)
+			end
 		end
 	end
 end
