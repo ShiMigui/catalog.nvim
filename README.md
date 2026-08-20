@@ -67,6 +67,7 @@ The `setup` function accepts a `catalog.Config` table:
 | `lsp_config` | `catalog.LspDefaultConfig` | Global configuration for all LSPs. |
 | `conform` | `boolean` | Automatically install formatters from `conform.nvim`. |
 | `ensure_installed` | `string[]\|string` | Packages to install without setup. |
+| `auto_update` | `boolean` | Automatically update installed packages. |
 | `silent_errors` | `boolean` | Disable error notifications. |
 | `debug` | `boolean` | Enable debug logging. |
 
@@ -86,6 +87,11 @@ lsp = {
     -- Array entries for default configuration
     "marksman",
     "intelephense",
+
+    -- Disable a specific LSP
+    ["some-server"] = {
+        enabled = false,
+    },
 }
 ```
 
@@ -96,6 +102,10 @@ You can provide global defaults for all LSPs:
 ```lua
 lsp_config = {
     capabilities = "blink.cmp", -- or "nvim-cmp"
+    on_attach = function(client, bufnr)
+        -- Global on_attach for all LSPs
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr })
+    end,
     config = {
         -- Base vim.lsp.config for all servers
     },
@@ -120,6 +130,14 @@ Installs packages without enabling any integration. Useful for CLI tools.
 ensure_installed = {
     "pgformatter",
 }
+```
+
+### Auto Update
+
+Automatically updates all installed packages when the plugin loads.
+
+```lua
+auto_update = true
 ```
 
 ## Advanced Usage
