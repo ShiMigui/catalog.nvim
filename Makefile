@@ -1,4 +1,4 @@
-.PHONY: test test-verbose test-file clean
+.PHONY: test test-verbose test-file clean coverage lint format check
 
 # Run all tests
 test:
@@ -21,3 +21,19 @@ clean:
 # Run tests and generate coverage report
 coverage:
 	nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedDirectory tests/ --coverage" -c "lua require('plenary.coverage').show()"
+
+# Run luacheck linter
+lint:
+	luacheck lua/
+
+# Check formatting with stylua
+format-check:
+	stylua --check lua/
+
+# Format code with stylua
+format:
+	stylua lua/
+
+# Run all checks (lint, format, test)
+check: lint format-check test
+	@echo "✅ All checks passed!"
