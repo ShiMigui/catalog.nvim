@@ -5,11 +5,15 @@
 ---@class catalog.LspDefaultConfig
 ---@field config? catalog.LspConfig
 ---@field capabilities? catalog.CapabilityProvider
+---@field on_attach? fun(client: vim.lsp.Client, bufnr: integer): nil
 
 local log = require("catalog.log").log(...)
 
 ---@type catalog.LspConfig
 local lsp_default_config = { capabilities = vim.lsp.protocol.make_client_capabilities() }
+
+---@type fun(client: vim.lsp.Client, bufnr: integer): nil|nil
+local on_attach = nil
 
 ---@type table<string, fun(): table>
 local capability_providers = {
@@ -56,10 +60,19 @@ return {
 		if type(opts.config) == "table" then
 			lsp_default_config = vim.tbl_deep_extend("force", lsp_default_config, opts.config)
 		end
+
+		if type(opts.on_attach) == "function" then
+			on_attach = opts.on_attach
+		end
 	end,
 
 	---@return catalog.LspConfig
 	config = function()
 		return lsp_default_config
+	end,
+
+	---@return fun(client: vim.lsp.Client, bufnr: integer): nil|nil
+	get_on_attach = function()
+		return on_attach
 	end,
 }
