@@ -57,6 +57,148 @@ Example using Mason and LSP integration:
 }
 ```
 
+## Real-World Examples
+
+### TypeScript/JavaScript
+
+```lua
+{
+    "ShiMigui/catalog.nvim",
+    dependencies = {
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
+        "stevearc/conform.nvim",
+        "mfussenegger/nvim-lint",
+    },
+    opts = {
+        lsp = {
+            "typescript-language-server",
+            "eslint-ls",
+        },
+        lsp_config = {
+            capabilities = "blink.cmp",
+        },
+        conform = true,
+        lint = true,
+    },
+    config = function(_, opts)
+        local registry = require("mason-registry")
+        local function run()
+            require("catalog").setup(opts)
+        end
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
+    end,
+}
+```
+
+### Python
+
+```lua
+{
+    "ShiMigui/catalog.nvim",
+    dependencies = {
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
+        "stevearc/conform.nvim",
+        "mfussenegger/nvim-lint",
+    },
+    opts = {
+        lsp = {
+            "pylsp",
+            "ruff-lsp",
+        },
+        conform = true,
+        lint = true,
+        treesitter = {
+            ensure_installed = { "python" },
+        },
+    },
+    config = function(_, opts)
+        local registry = require("mason-registry")
+        local function run()
+            require("catalog").setup(opts)
+        end
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
+    end,
+}
+```
+
+### Go
+
+```lua
+{
+    "ShiMigui/catalog.nvim",
+    dependencies = {
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
+        "stevearc/conform.nvim",
+    },
+    opts = {
+        lsp = {
+            "gopls",
+        },
+        conform = true,
+        ensure_installed = { "golangci-lint" },
+        treesitter = {
+            ensure_installed = { "go", "gomod" },
+        },
+    },
+    config = function(_, opts)
+        local registry = require("mason-registry")
+        local function run()
+            require("catalog").setup(opts)
+        end
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
+    end,
+}
+```
+
+### Rust
+
+```lua
+{
+    "ShiMigui/catalog.nvim",
+    dependencies = {
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
+        "stevearc/conform.nvim",
+    },
+    opts = {
+        lsp = {
+            "rust-analyzer",
+        },
+        conform = true,
+        ensure_installed = { "codelldb" },
+        treesitter = {
+            ensure_installed = { "rust" },
+        },
+    },
+    config = function(_, opts)
+        local registry = require("mason-registry")
+        local function run()
+            require("catalog").setup(opts)
+        end
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
+    end,
+}
+```
+
 ## Configuration
 
 The `setup` function accepts a `catalog.Config` table:
@@ -193,7 +335,64 @@ Resolved packages follow this interface:
 ---@field name string
 ---@field installed fun(): boolean
 ---@field install fun(): nil
+---@field update? fun(): nil
 ---@field lsp? catalog.Lsp
+```
+
+### Creating a Custom Provider
+
+You can create your own provider to support different package managers:
+
+```lua
+-- lua/catalog/provider/my_provider.lua
+local M = {}
+
+M.resolve = function(name)
+    -- Check if package exists in your package manager
+    local pkg = my_package_manager.get(name)
+    if not pkg then
+        return nil
+    end
+
+    return {
+        name = name,
+        installed = function()
+            return pkg:is_installed()
+        end,
+        install = function()
+            pkg:install()
+        end,
+        update = function()
+            pkg:update()
+        end,
+    }
+end
+
+return M
+```
+
+### Registering a Custom Provider
+
+```lua
+-- In your Neovim config
+local catalog = require("catalog")
+local my_provider = require("catalog.provider.my_provider")
+
+-- Get current providers and add yours
+local providers = require("catalog.provider")
+table.insert(providers, my_provider)
+```
+
+### Using Multiple Providers
+
+Catalog tries providers in order. The first provider that resolves a package wins:
+
+```lua
+-- Example: Try local packages first, then Mason
+local local_provider = require("catalog.provider.local")
+local mason_provider = require("catalog.provider.mason")
+
+providers.set_providers({ local_provider, mason_provider })
 ```
 
 ## Design Principles
@@ -201,3 +400,36 @@ Resolved packages follow this interface:
 * **Lazy Installation:** Packages are only installed when required by an integration.
 * **Provider Agnostic:** Catalog works with any provider implementing the interface (Mason is built-in).
 * **Orchestration First:** Focuses on connecting packages to integrations rather than implementing the setup logic itself.
+
+## Troubleshooting
+
+### LSP not connecting
+
+1. Ensure `mason.nvim` is loaded before `catalog.setup()`
+2. Check if the package is installed: `:Mason` to open Mason UI
+3. Enable debug logging: `opts = { debug = true }`
+4. Run `:CatalogShowLSPs` to see configured servers
+
+### Package not found
+
+1. Check the package name on [mason-registry](https://github.com/nvim-mason/mason-registry)
+2. Some packages have different names in Mason (e.g., `typescript-language-server` vs `tsserver`)
+3. Enable debug logging to see resolve errors
+
+### Formatter/Linter not installing
+
+1. Ensure `conform.nvim` or `nvim-lint` is loaded before `catalog.setup()`
+2. Check the formatter/linter name matches the command in the respective plugin
+3. Some formatters may not be available in Mason
+
+### Treesitter parsers not installing
+
+1. Ensure `nvim-treesitter` is installed as a dependency
+2. Check parser name at [treesitter parsers](https://github.com/nvim-treesitter/nvim-treesitter#supported-languages)
+3. Run `:TSInstall <parser>` manually to test
+
+### Performance issues
+
+1. Use `silent_errors = true` to reduce notification overhead
+2. The package cache has a 5-minute TTL; restart Neovim to clear it
+3. Call `require("catalog.provider").clear_cache()` to manually clear cache
