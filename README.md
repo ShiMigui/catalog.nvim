@@ -66,6 +66,8 @@ The `setup` function accepts a `catalog.Config` table:
 | `lsp` | `catalog.LspIntegrationConfig` | List of LSPs to install and configure. |
 | `lsp_config` | `catalog.LspDefaultConfig` | Global configuration for all LSPs. |
 | `conform` | `boolean` | Automatically install formatters from `conform.nvim`. |
+| `lint` | `boolean` | Automatically install linters from `nvim-lint`. |
+| `treesitter` | `catalog.TreesitterConfig` | Treesitter parser installation and configuration. |
 | `ensure_installed` | `string[]\|string` | Packages to install without setup. |
 | `auto_update` | `boolean` | Automatically update installed packages. |
 | `silent_errors` | `boolean` | Disable error notifications. |
@@ -121,6 +123,37 @@ conform = true
 ```
 
 **Note:** `conform.nvim` must be loaded before `catalog.setup()`.
+
+### Lint
+
+Automatically installs linters configured in `nvim-lint`.
+
+```lua
+lint = true
+```
+
+**Note:** `nvim-lint` must be loaded before `catalog.setup()`.
+
+### Treesitter
+
+Installs and configures treesitter parsers.
+
+```lua
+treesitter = {
+    ensure_installed = {
+        "lua",
+        "typescript",
+        "python",
+    },
+    config = {
+        highlight = {
+            enable = true,
+        },
+    },
+}
+```
+
+**Note:** `nvim-treesitter` must be installed as a dependency.
 
 ### Ensure Installed
 
