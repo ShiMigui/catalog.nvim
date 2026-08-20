@@ -9,6 +9,7 @@ local scope = (...) or "catalog"
 ---@field treesitter? catalog.TreesitterConfig
 ---@field ensure_installed? string[]|string
 ---@field auto_update? boolean
+---@field auto_install? catalog.AutoInstallConfig
 ---@field silent_errors? boolean
 ---@field debug? boolean
 ---@field log? table
@@ -57,6 +58,10 @@ return {
 			error("catalog.setup: auto_update must be a boolean")
 		end
 
+		if opts.auto_install ~= nil and type(opts.auto_install) ~= "table" then
+			error("catalog.setup: auto_install must be a table")
+		end
+
 		opts.log = opts.log or {}
 		local log = log_setup.set_log(opts.log, opts.silent_errors == true, opts.debug).log(scope)
 
@@ -88,6 +93,10 @@ return {
 
 		if opts.auto_update then
 			require("catalog.auto_update").setup()
+		end
+
+		if opts.auto_install then
+			require("catalog.auto_install").setup(opts.auto_install)
 		end
 		log.header()
 	end,
