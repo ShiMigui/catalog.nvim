@@ -31,9 +31,9 @@ local function resolve(name)
 	end
 
 	for _, provider in pairs(providers) do
-		local ok, p = pcall(provider.resolve, name)
+		local ok_resolve, p = pcall(provider.resolve, name)
 
-		if not ok then
+		if not ok_resolve then
 			log.err("Error trying to get '%s': %s", name, p)
 		elseif p then
 			cache[name] = p

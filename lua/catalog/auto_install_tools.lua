@@ -396,11 +396,6 @@ local FT_TOOLS = {
 		lsp = "v-analyzer",
 	},
 
-	-- Nim
-	nim = {
-		lsp = "nimlangserver",
-	},
-
 	-- Fennel
 	fennel = {
 		lsp = "fennel-language-server",
@@ -579,17 +574,6 @@ local FT_TOOLS = {
 		lsp = "cairo-language-server",
 	},
 
-	-- Rust (additional)
-	toml = {
-		lsp = "taplo",
-	},
-
-	-- Dockerfile
-	dockerfile = {
-		lsp = "dockerfile-language-server",
-		lint = "hadolint",
-	},
-
 	-- Git
 	gitcommit = {
 		lint = "commitlint",
@@ -619,24 +603,6 @@ local FT_TOOLS = {
 	-- Text
 	text = {
 		lint = "vale",
-	},
-
-	-- Git Commit
-	gitcommit = {
-		lint = "commitlint",
-	},
-
-	-- GitHub Actions
-	yaml = {
-		lsp = "yaml-language-server",
-		lint = "actionlint",
-	},
-
-	-- Neovim Config
-	lua = {
-		lsp = "lua-language-server",
-		conform = "stylua",
-		lint = "luacheck",
 	},
 }
 
