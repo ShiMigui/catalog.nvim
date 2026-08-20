@@ -318,39 +318,48 @@ auto_update = true
 
 ### Auto Install
 
-Automatically installs LSPs, formatters, and linters when opening a file of a specific filetype. This creates `FileType` autocmds that trigger installation on demand.
+Automatically installs recommended LSPs, formatters, and linters when opening a file of a specific filetype. Uses a built-in mapping of filetypes to Mason packages.
 
 ```lua
-auto_install = {
-    -- Install LSPs by filetype
-    lsp = {
-        lua = "lua-language-server",
-        python = { "pylsp", "ruff-lsp" },
-        typescript = "typescript-language-server",
-        go = "gopls",
-        rust = "rust-analyzer",
-    },
-
-    -- Install formatters by filetype
-    conform = {
-        lua = "stylua",
-        python = "black",
-        typescript = "prettier",
-        go = "gofumpt",
-        rust = "rustfmt",
-    },
-
-    -- Install linters by filetype
-    lint = {
-        lua = "luacheck",
-        python = "ruff",
-        typescript = "eslint_d",
-        go = "golangci-lint",
-    },
-}
+auto_install = true
 ```
 
-**Note:** Tools are only installed when you open a file with the matching filetype. Already installed tools are skipped.
+The following filetypes are supported out of the box:
+
+| Filetype | LSP | Formatter | Linter |
+| :--- | :--- | :--- | :--- |
+| `lua` | lua-language-server | stylua | luacheck |
+| `typescript` | typescript-language-server | prettierd | eslint-ls |
+| `python` | pylsp, ruff-lsp | black, isort | ruff, mypy |
+| `go` | gopls | gofumpt | golangci-lint |
+| `rust` | rust-analyzer | rustfmt | - |
+| `c/cpp` | clangd | clang-format | cpplint |
+| `java` | jdtls | google-java-format | - |
+| `php` | intelephense | php-cs-fixer | phpcs, phpstan |
+| `ruby` | ruby-lsp | rubocop | rubocop |
+| `html` | html-lsp | prettierd | - |
+| `css/scss` | css-lsp | prettierd | - |
+| `yaml` | yaml-language-server | - | yamllint |
+| `json` | json-lsp | prettierd | - |
+| `markdown` | marksman | - | markdownlint |
+| `dockerfile` | dockerfile-language-server | - | hadolint |
+| `terraform` | terraform-ls | terraform_fmt | tflint |
+| `sql` | sqls | sql-formatter | - |
+| `graphql` | graphql-language-service-cli | prettierd | - |
+| `nix` | nil | nixfmt | - |
+| `haskell` | haskell-language-server | ormolu | hlint |
+| `elixir` | elixir-ls | - | - |
+| `kotlin` | kotlin-language-server | ktfmt | ktlint |
+| `swift` | - | swiftformat | swiftlint |
+| `zig` | zls | - | - |
+| `vue` | vue-language-server | prettierd | - |
+| `svelte` | svelte-language-server | prettierd | - |
+| `astro` | astro-language-server | prettierd | - |
+| `prisma` | prisma-language-server | - | - |
+| `tailwindcss` | tailwindcss-language-server | - | - |
+| `shell` | bash-language-server | - | shellcheck |
+
+If a filetype is not in the list, a simple info message will be shown.
 
 ## Advanced Usage
 
