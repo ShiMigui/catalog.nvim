@@ -1,6 +1,14 @@
 local log = require("catalog.log").log(...)
 local FT_TOOLS = require("catalog.auto_install_tools")
+local provider = require("catalog.provider")
 
+---@class catalog.AutoInstallConfig
+---@field lsp? boolean|string[]
+---@field formatter? boolean|string[]
+---@field linter? boolean|string[]
+
+---@param val any
+---@return string[]
 local function ensure_list(val)
 	if type(val) == "string" then
 		return { val }
@@ -8,116 +16,247 @@ local function ensure_list(val)
 	return val
 end
 
+---@param tbl table
+---@return boolean
 local function has_value(tbl)
 	return next(tbl) ~= nil
 end
 
-local function install_tools(ft, tools, integration_name)
-	if not tools then
-		return false
+---@param tool string
+---@param ft string
+---@return catalog.Package|nil
+local function resolve_package(tool, ft)
+	local p = provider.resolve(tool)
+	if not p then
+		log.err("Package '%s' for filetype '%s' not found in provider", tool, ft)
+		return nil
+	end
+	return p
+end
+
+---@param p catalog.Package
+local function install_if_needed(p)
+	if not p.installed() then
+		p.install()
+	end
+end
+
+--- Register an LSP with vim.lsp and enable it.
+---@param name string
+local function register_lsp(name)
+	if vim.lsp.is_enabled(name) then
+		return
 	end
 
-	local provider = require("catalog.provider")
-	tools = ensure_list(tools)
-	local installed_any = false
+	local lsp_config = require("catalog.lsp.config")
+	local default = lsp_config.config()
+	local on_attach = lsp_config.get_on_attach()
 
-	for _, tool in ipairs(tools) do
-		local p = provider.resolve(tool)
-		if p and not p.installed() then
-			log.dbg("Auto-installing %s '%s' for filetype '%s'", integration_name, tool, ft)
-			p.install()
-			installed_any = true
+	local config = vim.deepcopy(default)
+	if on_attach then
+		config.on_attach = on_attach
+	end
+
+	vim.lsp.config(name, config)
+	vim.lsp.enable(name)
+end
+
+--- Register a formatter with conform for a filetype.
+---@param tool string
+---@param ft string
+local function register_formatter(tool, ft)
+	local ok, conform = pcall(require, "conform")
+	if not ok then
+		return
+	end
+
+	if not conform.formatters_by_ft then
+		return
+	end
+
+	if not conform.formatters_by_ft[ft] then
+		conform.formatters_by_ft[ft] = {}
+	end
+
+	-- Avoid duplicates
+	for _, existing in ipairs(conform.formatters_by_ft[ft]) do
+		if existing == tool then
+			return
 		end
 	end
 
-	return installed_any
+	table.insert(conform.formatters_by_ft[ft], tool)
+end
+
+--- Register a linter with nvim-lint for a filetype.
+---@param tool string
+---@param ft string
+local function register_linter(tool, ft)
+	local ok, lint = pcall(require, "lint")
+	if not ok then
+		return
+	end
+
+	if not lint.linters_by_ft then
+		return
+	end
+
+	if not lint.linters_by_ft[ft] then
+		lint.linters_by_ft[ft] = {}
+	end
+
+	-- Avoid duplicates
+	for _, existing in ipairs(lint.linters_by_ft[ft]) do
+		if existing == tool then
+			return
+		end
+	end
+
+	table.insert(lint.linters_by_ft[ft], tool)
+end
+
+--- Install tools and register post-install hooks for a filetype.
+---@param ft string
+---@param tools string[]
+---@param tool_type '"lsp"'|'"formatter"'|'"linter"'
+---@param register fun(tool: string, ft: string)
+local function install_and_register(ft, tools, tool_type, register)
+	for _, tool in ipairs(tools) do
+		local p = resolve_package(tool, ft)
+		if p then
+			install_if_needed(p)
+			register(tool, ft)
+			log.dbg("Auto-install %s '%s' for filetype '%s'", tool_type, tool, ft)
+		end
+	end
+end
+
+--- Build filetype-to-tools mapping from FT_TOOLS.
+---@param enabled_types table<string, boolean|string[]>
+---@return table<string, string[]>, table<string, string[]>, table<string, string[]>
+local function build_filetype_maps(enabled_types)
+	---@type table<string, string[]>
+	local lsp_filetypes = {}
+	---@type table<string, string[]>
+	local formatter_filetypes = {}
+	---@type table<string, string[]>
+	local linter_filetypes = {}
+
+	for ft, tools in pairs(FT_TOOLS) do
+		if enabled_types.lsp and tools.lsp then
+			if enabled_types.lsp == true then
+				lsp_filetypes[ft] = ensure_list(tools.lsp)
+			elseif type(enabled_types.lsp) == "table" then
+				-- Only include if this LSP is in the explicit list
+				local lsp_tools = ensure_list(tools.lsp)
+				local filtered = {}
+				for _, name in ipairs(lsp_tools) do
+					for _, allowed in ipairs(enabled_types.lsp) do
+						if name == allowed then
+							table.insert(filtered, name)
+							break
+						end
+					end
+				end
+				if #filtered > 0 then
+					lsp_filetypes[ft] = filtered
+				end
+			end
+		end
+
+		if enabled_types.formatter and tools.formatter then
+			if enabled_types.formatter == true then
+				formatter_filetypes[ft] = ensure_list(tools.formatter)
+			elseif type(enabled_types.formatter) == "table" then
+				local fmt_tools = ensure_list(tools.formatter)
+				local filtered = {}
+				for _, name in ipairs(fmt_tools) do
+					for _, allowed in ipairs(enabled_types.formatter) do
+						if name == allowed then
+							table.insert(filtered, name)
+							break
+						end
+					end
+				end
+				if #filtered > 0 then
+					formatter_filetypes[ft] = filtered
+				end
+			end
+		end
+
+		if enabled_types.linter and tools.linter then
+			if enabled_types.linter == true then
+				linter_filetypes[ft] = ensure_list(tools.linter)
+			elseif type(enabled_types.linter) == "table" then
+				local lint_tools = ensure_list(tools.linter)
+				local filtered = {}
+				for _, name in ipairs(lint_tools) do
+					for _, allowed in ipairs(enabled_types.linter) do
+						if name == allowed then
+							table.insert(filtered, name)
+							break
+						end
+					end
+				end
+				if #filtered > 0 then
+					linter_filetypes[ft] = filtered
+				end
+			end
+		end
+	end
+
+	return lsp_filetypes, formatter_filetypes, linter_filetypes
+end
+
+--- Create FileType autocmds for a tool type.
+---@param filetypes table<string, string[]>
+---@param tool_type '"LSP"'|'"formatter"'|'"linter"'
+---@param group_name string
+---@param register fun(tool: string, ft: string)
+local function create_autocmds(filetypes, tool_type, group_name, register)
+	if not has_value(filetypes) then
+		return
+	end
+
+	vim.api.nvim_create_autocmd("FileType", {
+		pattern = vim.tbl_keys(filetypes),
+		callback = function(args)
+			local tools = filetypes[args.match]
+			if not tools then
+				return
+			end
+			install_and_register(args.match, tools, tool_type, register)
+		end,
+		group = vim.api.nvim_create_augroup(group_name, { clear = true }),
+	})
 end
 
 ---@type catalog.Integration
 return {
-	setup = function()
+	---@param opts? boolean|catalog.AutoInstallConfig
+	setup = function(opts)
 		log.header()
 
-		local all_filetypes = vim.tbl_keys(FT_TOOLS)
-		if #all_filetypes == 0 then
-			log.dbg("No filetools configured for auto_install")
+		-- Normalize opts: true → { lsp = true, formatter = true, linter = true }
+		if opts == true or opts == nil then
+			opts = { lsp = true, formatter = true, linter = true }
+		end
+
+		if type(opts) ~= "table" then
+			log.err("auto_install options must be a boolean or table")
 			return
 		end
 
-		---@type table<string, string[]>
-		local lsp_filetypes = {}
-		---@type table<string, string[]>
-		local conform_filetypes = {}
-		---@type table<string, string[]>
-		local lint_filetypes = {}
+		local lsp_filetypes, formatter_filetypes, linter_filetypes = build_filetype_maps(opts)
 
-		for ft, tools in pairs(FT_TOOLS) do
-			if tools.lsp then
-				lsp_filetypes[ft] = ensure_list(tools.lsp)
-			end
-			if tools.conform then
-				conform_filetypes[ft] = ensure_list(tools.conform)
-			end
-			if tools.lint then
-				lint_filetypes[ft] = ensure_list(tools.lint)
-			end
-		end
+		create_autocmds(lsp_filetypes, "LSP", "CatalogAutoInstallLsp", register_lsp)
+		create_autocmds(formatter_filetypes, "formatter", "CatalogAutoInstallFormatter", register_formatter)
+		create_autocmds(linter_filetypes, "linter", "CatalogAutoInstallLinter", register_linter)
 
-		if has_value(lsp_filetypes) then
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = vim.tbl_keys(lsp_filetypes),
-				callback = function(args)
-					local tools = lsp_filetypes[args.match]
-					if not tools then
-						return
-					end
-
-					local installed = install_tools(args.match, tools, "LSP")
-					if not installed and #tools == 0 then
-						log.inf("No LSP available for filetype '%s'", args.match)
-					end
-				end,
-				group = vim.api.nvim_create_augroup("CatalogAutoInstallLsp", { clear = true }),
-			})
-		end
-
-		if has_value(conform_filetypes) then
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = vim.tbl_keys(conform_filetypes),
-				callback = function(args)
-					local tools = conform_filetypes[args.match]
-					if not tools then
-						return
-					end
-
-					local installed = install_tools(args.match, tools, "formatter")
-					if not installed and #tools == 0 then
-						log.inf("No formatter available for filetype '%s'", args.match)
-					end
-				end,
-				group = vim.api.nvim_create_augroup("CatalogAutoInstallConform", { clear = true }),
-			})
-		end
-
-		if has_value(lint_filetypes) then
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = vim.tbl_keys(lint_filetypes),
-				callback = function(args)
-					local tools = lint_filetypes[args.match]
-					if not tools then
-						return
-					end
-
-					local installed = install_tools(args.match, tools, "linter")
-					if not installed and #tools == 0 then
-						log.inf("No linter available for filetype '%s'", args.match)
-					end
-				end,
-				group = vim.api.nvim_create_augroup("CatalogAutoInstallLint", { clear = true }),
-			})
-		end
-
-		log.inf("Auto-install enabled for %d filetypes", #all_filetypes)
+		local count = #vim.tbl_keys(lsp_filetypes)
+			+ #vim.tbl_keys(formatter_filetypes)
+			+ #vim.tbl_keys(linter_filetypes)
+		log.inf("Auto-install enabled for %d filetypes", count)
 		log.header()
 	end,
 }
