@@ -1,6 +1,7 @@
 local log = require("catalog.log").log(...)
 local provider = require("catalog.provider")
-local default = require("catalog.lsp.config").config()
+local lsp_config = require("catalog.lsp.config")
+local default = lsp_config.config()
 
 --- Catalog LSP configuration.
 ---
@@ -81,6 +82,11 @@ local function provide(name, config)
 		return nil
 	end
 
+	if config and config.enabled == false then
+		log.dbg("LSP '%s' is disabled, skipping", name)
+		return nil
+	end
+
 	pkg.install()
 	pkg.lsp:update(config or {}, default)
 	return pkg.lsp
@@ -150,11 +156,18 @@ return {
 
 		log.dbg("STARTING SERVERS")
 
+		local on_attach = lsp_config.get_on_attach()
+
 		for lsp_name, config in pairs(index) do
 			log.dbg("STARTING SERVER: %s", lsp_name)
 
+			local final_config = vim.deepcopy(config)
+			if on_attach then
+				final_config.on_attach = on_attach
+			end
+
 			if not vim.lsp.is_enabled(lsp_name) then
-				vim.lsp.config(lsp_name, config)
+				vim.lsp.config(lsp_name, final_config)
 				vim.lsp.enable(lsp_name)
 			end
 		end

@@ -2,6 +2,8 @@
 
 ---Alias for Neovim's LSP configuration.
 ---@class catalog.LspConfig: vim.lsp.config
+---@field enabled? boolean
+---@field cmd? string[]
 
 ---Represents an LSP entry in the catalog.
 ---@class catalog.Lsp
@@ -14,6 +16,7 @@
 ---@field name string
 ---@field installed fun(): boolean
 ---@field install fun(): nil
+---@field update? fun(): nil
 ---@field lsp? catalog.Lsp
 
 ---Responsible for resolving and providing packages.
