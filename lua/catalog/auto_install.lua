@@ -115,6 +115,25 @@ local function register_linter(tool, ft)
 	table.insert(lint.linters_by_ft[ft], tool)
 end
 
+--- Find the tool name associated with a Mason package name for a given tool type.
+---@param pkg_name string
+---@param tool_type '"lsp"'|'"formatter"'|'"linter"'
+---@return string|nil tool_name, string|nil ft
+local function find_tool_for_package(pkg_name, tool_type)
+	for ft, tools in pairs(FT_TOOLS) do
+		local tool_list = tools[tool_type]
+		if tool_list then
+			tool_list = ensure_list(tool_list)
+			for _, name in ipairs(tool_list) do
+				if name == pkg_name then
+					return name, ft
+				end
+			end
+		end
+	end
+	return nil, nil
+end
+
 --- Install tools and register post-install hooks for a filetype.
 ---@param ft string
 ---@param tools string[]
@@ -252,6 +271,36 @@ return {
 		create_autocmds(lsp_filetypes, "LSP", "CatalogAutoInstallLsp", register_lsp)
 		create_autocmds(formatter_filetypes, "formatter", "CatalogAutoInstallFormatter", register_formatter)
 		create_autocmds(linter_filetypes, "linter", "CatalogAutoInstallLinter", register_linter)
+
+		-- Listen for Mason install success events to register LSP/formatter/linter
+		-- after async installation completes.
+		local ok, registry = pcall(require, "mason-registry")
+		if ok then
+			registry:on("package:install:success", function(handle)
+				local pkg_name = handle.package.name
+				-- Check LSP
+				local tool, ft = find_tool_for_package(pkg_name, "lsp")
+				if tool then
+					register_lsp(tool)
+					log.inf("Auto-install LSP '%s' registered after install", tool)
+					return
+				end
+				-- Check formatter
+				tool, ft = find_tool_for_package(pkg_name, "formatter")
+				if tool and ft then
+					register_formatter(tool, ft)
+					log.inf("Auto-install formatter '%s' registered after install", tool)
+					return
+				end
+				-- Check linter
+				tool, ft = find_tool_for_package(pkg_name, "linter")
+				if tool and ft then
+					register_linter(tool, ft)
+					log.inf("Auto-install linter '%s' registered after install", tool)
+					return
+				end
+			end)
+		end
 
 		local count = #vim.tbl_keys(lsp_filetypes)
 			+ #vim.tbl_keys(formatter_filetypes)
