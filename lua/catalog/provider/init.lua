@@ -1,7 +1,13 @@
 local log = require("catalog.log").log(...)
 
 ---@type catalog.Provider[]
-local providers = { require("catalog.provider.mason") }
+local providers = {}
+
+-- Try to load mason provider if available
+local ok, mason = pcall(require, "catalog.provider.mason")
+if ok then
+	table.insert(providers, mason)
+end
 
 local cache = {}
 local CACHE_TTL = 300 -- 5 minutes

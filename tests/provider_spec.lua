@@ -6,6 +6,7 @@ describe("catalog.provider", function()
 	before_each(function()
 		-- Reload the module to get fresh state
 		package.loaded["catalog.provider"] = nil
+		package.loaded["catalog.provider.mason"] = nil
 		provider = require("catalog.provider")
 	end)
 
@@ -20,7 +21,7 @@ describe("catalog.provider", function()
 			-- Skip if mason is not installed
 			local ok, _ = pcall(require, "mason-registry")
 			if not ok then
-				skip("mason-registry not available")
+				return -- skip
 			end
 
 			local result = provider.resolve("lua-language-server")

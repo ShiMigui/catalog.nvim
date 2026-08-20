@@ -350,7 +350,7 @@ local FT_TOOLS = {
 	},
 
 	-- Docker Compose
-	docker-compose = {
+	["docker-compose"] = {
 		lsp = "docker-compose-language-service",
 	},
 

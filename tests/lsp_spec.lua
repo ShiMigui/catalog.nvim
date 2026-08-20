@@ -23,6 +23,12 @@ describe("catalog.lsp", function()
 		end)
 
 		it("handles array-style LSP declarations", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			-- This will try to resolve packages, which may fail
 			-- but should not error in the setup itself
 			assert.has_no.errors(function()
@@ -33,6 +39,12 @@ describe("catalog.lsp", function()
 		end)
 
 		it("handles keyed LSP declarations", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			assert.has_no.errors(function()
 				lsp.setup({
 					["lua-language-server"] = {
@@ -49,6 +61,12 @@ describe("catalog.lsp", function()
 		end)
 
 		it("handles mixed declarations", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			assert.has_no.errors(function()
 				lsp.setup({
 					"lua-language-server",

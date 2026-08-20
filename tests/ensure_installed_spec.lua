@@ -5,11 +5,19 @@ describe("catalog.ensure_installed", function()
 
 	before_each(function()
 		package.loaded["catalog.ensure_installed"] = nil
+		package.loaded["catalog.provider"] = nil
+		package.loaded["catalog.provider.mason"] = nil
 		ensure_installed = require("catalog.ensure_installed")
 	end)
 
 	describe("setup", function()
 		it("accepts string input", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			-- This will try to resolve the package, which may fail
 			-- but should not error in the setup itself
 			assert.has_no.errors(function()
@@ -18,6 +26,12 @@ describe("catalog.ensure_installed", function()
 		end)
 
 		it("accepts table input", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			assert.has_no.errors(function()
 				ensure_installed.setup({ "lua-language-server" })
 			end)
@@ -44,6 +58,12 @@ describe("catalog.ensure_installed", function()
 		end)
 
 		it("handles multiple packages", function()
+			-- Skip if mason is not available (needed for provider)
+			local ok, _ = pcall(require, "mason-registry")
+			if not ok then
+				return -- skip
+			end
+
 			assert.has_no.errors(function()
 				ensure_installed.setup({
 					"lua-language-server",

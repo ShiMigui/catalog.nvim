@@ -1,4 +1,3 @@
-local provider = require("catalog.provider")
 local log = require("catalog.log").log(...)
 local FT_TOOLS = require("catalog.auto_install_tools")
 
@@ -9,7 +8,7 @@ local function ensure_list(val)
 	return val
 end
 
-local function has_value tbl)
+local function has_value(tbl)
 	return next(tbl) ~= nil
 end
 
@@ -18,6 +17,7 @@ local function install_tools(ft, tools, integration_name)
 		return false
 	end
 
+	local provider = require("catalog.provider")
 	tools = ensure_list(tools)
 	local installed_any = false
 
