@@ -27,6 +27,12 @@ return {
 					msn_pkg:install()
 				end
 			end,
+			update = function()
+				if msn_pkg:is_installed() then
+					log.dbg("Updating package %s", str)
+					msn_pkg:update()
+				end
+			end,
 		}
 		if nvim and nvim.lspconfig then
 			pkg.lsp = lsp.new(nvim.lspconfig)

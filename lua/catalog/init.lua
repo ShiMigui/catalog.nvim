@@ -6,6 +6,7 @@ local scope = (...) or "catalog"
 ---@field lsp_config? catalog.LspDefaultConfig
 ---@field conform? boolean
 ---@field ensure_installed? string[]|string
+---@field auto_update? boolean
 ---@field silent_errors? boolean
 ---@field debug? boolean
 ---@field log? table
@@ -38,6 +39,10 @@ return {
 			error("catalog.setup: ensure_installed must be a string or table")
 		end
 
+		if opts.auto_update ~= nil and type(opts.auto_update) ~= "boolean" then
+			error("catalog.setup: auto_update must be a boolean")
+		end
+
 		opts.log = opts.log or {}
 		local log = log_setup.set_log(opts.log, opts.silent_errors == true, opts.debug).log(scope)
 
@@ -57,6 +62,10 @@ return {
 
 		if opts.ensure_installed then
 			require("catalog.ensure_installed").setup(opts.ensure_installed)
+		end
+
+		if opts.auto_update then
+			require("catalog.auto_update").setup()
 		end
 		log.header()
 	end,
