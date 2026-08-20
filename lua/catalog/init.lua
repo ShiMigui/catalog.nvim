@@ -50,7 +50,11 @@ return {
 			error("catalog.setup: treesitter must be a table")
 		end
 
-		if opts.ensure_installed ~= nil and type(opts.ensure_installed) ~= "string" and type(opts.ensure_installed) ~= "table" then
+		if
+			opts.ensure_installed ~= nil
+			and type(opts.ensure_installed) ~= "string"
+			and type(opts.ensure_installed) ~= "table"
+		then
 			error("catalog.setup: ensure_installed must be a string or table")
 		end
 
