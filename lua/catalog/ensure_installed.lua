@@ -8,7 +8,7 @@ return {
 		if type(opts) == "string" then
 			opts = { opts }
 		elseif not vim.islist(opts) then
-			log.wrn("There is no packages to ensure installation in ensure_install")
+			log.wrn("No packages to ensure installation in ensure_installed")
 			return
 		end
 
