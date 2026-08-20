@@ -25,16 +25,16 @@ describe("catalog.auto_install_tools", function()
 			local lua_tools = FT_TOOLS.lua
 			assert.is_table(lua_tools)
 			assert.are.equal("lua-language-server", lua_tools.lsp)
-			assert.are.equal("stylua", lua_tools.conform)
-			assert.are.equal("luacheck", lua_tools.lint)
+			assert.are.equal("stylua", lua_tools.formatter)
+			assert.are.equal("luacheck", lua_tools.linter)
 		end)
 
 		it("has correct structure for python filetype", function()
 			local python_tools = FT_TOOLS.python
 			assert.is_table(python_tools)
 			assert.is_table(python_tools.lsp)
-			assert.is_table(python_tools.conform)
-			assert.is_table(python_tools.lint)
+			assert.is_table(python_tools.formatter)
+			assert.is_table(python_tools.linter)
 		end)
 
 		it("has LSP for typescript", function()
@@ -46,23 +46,23 @@ describe("catalog.auto_install_tools", function()
 		it("has formatter for go", function()
 			local go_tools = FT_TOOLS.go
 			assert.is_table(go_tools)
-			assert.are.equal("gofumpt", go_tools.conform)
+			assert.are.equal("gofumpt", go_tools.formatter)
 		end)
 
 		it("has linter for shell", function()
 			local sh_tools = FT_TOOLS.sh
 			assert.is_table(sh_tools)
-			assert.are.equal("shellcheck", sh_tools.lint)
+			assert.are.equal("shellcheck", sh_tools.linter)
 		end)
 
 		it("supports multiple tools per category", function()
 			local python_tools = FT_TOOLS.python
 			assert.is_table(python_tools.lsp)
 			assert.are.equal(2, #python_tools.lsp)
-			assert.is_table(python_tools.conform)
-			assert.are.equal(2, #python_tools.conform)
-			assert.is_table(python_tools.lint)
-			assert.are.equal(2, #python_tools.lint)
+			assert.is_table(python_tools.formatter)
+			assert.are.equal(2, #python_tools.formatter)
+			assert.is_table(python_tools.linter)
+			assert.are.equal(2, #python_tools.linter)
 		end)
 
 		it("has web framework filetypes", function()

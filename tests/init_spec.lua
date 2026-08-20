@@ -93,10 +93,10 @@ describe("catalog", function()
 			end, "catalog.setup: auto_update must be a boolean")
 		end)
 
-		it("rejects non-boolean auto_install", function()
+		it("rejects non-boolean/string/table auto_install", function()
 			assert.has.errors(function()
 				catalog.setup({ auto_install = "invalid" })
-			end, "catalog.setup: auto_install must be a boolean")
+			end, "catalog.setup: auto_install must be a boolean or table")
 		end)
 
 		it("accepts valid config", function()

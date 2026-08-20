@@ -19,20 +19,20 @@ describe("catalog.auto_install", function()
 			assert.is_true(#autocmds > 0)
 		end)
 
-		it("creates autocmds for conform filetypes", function()
+		it("creates autocmds for formatter filetypes", function()
 			auto_install.setup()
 
 			local autocmds = vim.api.nvim_get_autocmds({
-				group = "CatalogAutoInstallConform",
+				group = "CatalogAutoInstallFormatter",
 			})
 			assert.is_true(#autocmds > 0)
 		end)
 
-		it("creates autocmds for lint filetypes", function()
+		it("creates autocmds for linter filetypes", function()
 			auto_install.setup()
 
 			local autocmds = vim.api.nvim_get_autocmds({
-				group = "CatalogAutoInstallLint",
+				group = "CatalogAutoInstallLinter",
 			})
 			assert.is_true(#autocmds > 0)
 		end)

@@ -4,12 +4,12 @@ local scope = (...) or "catalog"
 ---@class catalog.Config
 ---@field lsp? catalog.LspIntegrationConfig
 ---@field lsp_config? catalog.LspDefaultConfig
----@field conform? boolean
----@field lint? boolean
+---@field conform? boolean @deprecated Use auto_install instead
+---@field lint? boolean @deprecated Use auto_install instead
 ---@field treesitter? catalog.TreesitterConfig
 ---@field ensure_installed? string[]|string
 ---@field auto_update? boolean
----@field auto_install? boolean
+---@field auto_install? boolean|catalog.AutoInstallConfig
 ---@field silent_errors? boolean
 ---@field debug? boolean
 ---@field log? table
@@ -20,6 +20,38 @@ local scope = (...) or "catalog"
 
 ---@class catalog.Integration
 ---@field setup fun(opts: any): nil
+
+---@param auto_install boolean|catalog.AutoInstallConfig|nil
+---@param conform boolean|nil @deprecated
+---@param lint boolean|nil @deprecated
+---@return boolean|catalog.AutoInstallConfig
+local function merge_auto_install(auto_install, conform, lint)
+	-- If auto_install is already a table, use it
+	if type(auto_install) == "table" then
+		return auto_install
+	end
+
+	-- If only auto_install=true (no legacy conform/lint), enable all
+	if auto_install == true and not conform and not lint then
+		return true
+	end
+
+	-- Merge legacy conform/lint into auto_install
+	local merged = {}
+	if auto_install == true then
+		merged.lsp = true
+		merged.formatter = true
+		merged.linter = true
+	end
+	if conform then
+		merged.formatter = true
+	end
+	if lint then
+		merged.linter = true
+	end
+
+	return next(merged) and merged or (auto_install == true or false)
+end
 
 return {
 	---@param opts? catalog.Config
@@ -62,8 +94,8 @@ return {
 			error("catalog.setup: auto_update must be a boolean")
 		end
 
-		if opts.auto_install ~= nil and type(opts.auto_install) ~= "boolean" then
-			error("catalog.setup: auto_install must be a boolean")
+		if opts.auto_install ~= nil and type(opts.auto_install) ~= "boolean" and type(opts.auto_install) ~= "table" then
+			error("catalog.setup: auto_install must be a boolean or table")
 		end
 
 		opts.log = opts.log or {}
@@ -80,10 +112,12 @@ return {
 		end
 
 		if opts.conform then
+			log.inf("DEPRECATED: conform = true is deprecated, use auto_install = { formatter = true } instead")
 			require("catalog.conform").setup(opts.conform)
 		end
 
 		if opts.lint then
+			log.inf("DEPRECATED: lint = true is deprecated, use auto_install = { linter = true } instead")
 			require("catalog.lint").setup(opts.lint)
 		end
 
@@ -100,8 +134,16 @@ return {
 		end
 
 		if opts.auto_install then
-			require("catalog.auto_install").setup()
+			local merged = merge_auto_install(opts.auto_install, opts.conform, opts.lint)
+			require("catalog.auto_install").setup(merged)
+		elseif opts.conform or opts.lint then
+			-- Legacy conform/lint without auto_install: still trigger auto_install
+			local merged = merge_auto_install(false, opts.conform, opts.lint)
+			if next(merged) then
+				require("catalog.auto_install").setup(merged)
+			end
 		end
+
 		log.header()
 	end,
 }

@@ -78,8 +78,10 @@ Example using Mason and LSP integration:
         lsp_config = {
             capabilities = "blink.cmp",
         },
-        conform = true,
-        lint = true,
+        auto_install = {
+            formatter = true,
+            linter = true,
+        },
     },
     config = function(_, opts)
         local registry = require("mason-registry")
@@ -111,8 +113,10 @@ Example using Mason and LSP integration:
             "pylsp",
             "ruff-lsp",
         },
-        conform = true,
-        lint = true,
+        auto_install = {
+            formatter = true,
+            linter = true,
+        },
         treesitter = {
             ensure_installed = { "python" },
         },
@@ -145,7 +149,9 @@ Example using Mason and LSP integration:
         lsp = {
             "gopls",
         },
-        conform = true,
+        auto_install = {
+            formatter = true,
+        },
         ensure_installed = { "golangci-lint" },
         treesitter = {
             ensure_installed = { "go", "gomod" },
@@ -179,7 +185,9 @@ Example using Mason and LSP integration:
         lsp = {
             "rust-analyzer",
         },
-        conform = true,
+        auto_install = {
+            formatter = true,
+        },
         ensure_installed = { "codelldb" },
         treesitter = {
             ensure_installed = { "rust" },
@@ -207,12 +215,12 @@ The `setup` function accepts a `catalog.Config` table:
 | :--- | :--- | :--- |
 | `lsp` | `catalog.LspIntegrationConfig` | List of LSPs to install and configure. |
 | `lsp_config` | `catalog.LspDefaultConfig` | Global configuration for all LSPs. |
-| `conform` | `boolean` | Automatically install formatters from `conform.nvim`. |
-| `lint` | `boolean` | Automatically install linters from `nvim-lint`. |
+| `conform` | `boolean` | **Deprecated:** Use `auto_install = { formatter = true }`. |
+| `lint` | `boolean` | **Deprecated:** Use `auto_install = { linter = true }`. |
 | `treesitter` | `catalog.TreesitterConfig` | Treesitter parser installation and configuration. |
 | `ensure_installed` | `string[]\|string` | Packages to install without setup. |
 | `auto_update` | `boolean` | Automatically update installed packages. |
-| `auto_install` | `catalog.AutoInstallConfig` | Auto-install tools by filetype. |
+| `auto_install` | `boolean\|catalog.AutoInstallConfig` | Auto-install and auto-configure tools by filetype. |
 | `silent_errors` | `boolean` | Disable error notifications. |
 | `debug` | `boolean` | Enable debug logging. |
 
@@ -257,25 +265,36 @@ lsp_config = {
 }
 ```
 
-### Conform
+### Auto Install
 
-Automatically installs formatters configured in `conform.nvim`.
-
-```lua
-conform = true
-```
-
-**Note:** `conform.nvim` must be loaded before `catalog.setup()`.
-
-### Lint
-
-Automatically installs linters configured in `nvim-lint`.
+Automatically installs and configures recommended LSPs, formatters, and linters when opening a file. Uses a built-in mapping of filetypes to Mason packages with post-install hooks that register tools with conform.nvim, nvim-lint, and vim.lsp.
 
 ```lua
-lint = true
+-- Enable all types for all filetypes
+auto_install = true
+
+-- Enable specific types
+auto_install = {
+    lsp = true,
+    formatter = true,
+    linter = true,
+}
+
+-- Only enable specific tools
+auto_install = {
+    lsp = { "lua-language-server", "pyright" },
+    formatter = { "stylua", "prettierd" },
+    linter = { "luacheck", "ruff" },
+}
 ```
 
-**Note:** `nvim-lint` must be loaded before `catalog.setup()`.
+When a filetype is opened, catalog will:
+1. Resolve the recommended tools via the provider
+2. Install missing tools via Mason (async)
+3. Register the tools with their respective integrations:
+   - **LSP** → `vim.lsp.config()` + `vim.lsp.enable()`
+   - **Formatter** → `conform.formatters_by_ft[ft]`
+   - **Linter** → `lint.linters_by_ft[ft]`
 
 ### Treesitter
 
@@ -315,51 +334,6 @@ Automatically updates all installed packages when the plugin loads.
 ```lua
 auto_update = true
 ```
-
-### Auto Install
-
-Automatically installs recommended LSPs, formatters, and linters when opening a file of a specific filetype. Uses a built-in mapping of filetypes to Mason packages.
-
-```lua
-auto_install = true
-```
-
-The following filetypes are supported out of the box:
-
-| Filetype | LSP | Formatter | Linter |
-| :--- | :--- | :--- | :--- |
-| `lua` | lua-language-server | stylua | luacheck |
-| `typescript` | typescript-language-server | prettierd | eslint-ls |
-| `python` | pylsp, ruff-lsp | black, isort | ruff, mypy |
-| `go` | gopls | gofumpt | golangci-lint |
-| `rust` | rust-analyzer | rustfmt | - |
-| `c/cpp` | clangd | clang-format | cpplint |
-| `java` | jdtls | google-java-format | - |
-| `php` | intelephense | php-cs-fixer | phpcs, phpstan |
-| `ruby` | ruby-lsp | rubocop | rubocop |
-| `html` | html-lsp | prettierd | - |
-| `css/scss` | css-lsp | prettierd | - |
-| `yaml` | yaml-language-server | - | yamllint |
-| `json` | json-lsp | prettierd | - |
-| `markdown` | marksman | - | markdownlint |
-| `dockerfile` | dockerfile-language-server | - | hadolint |
-| `terraform` | terraform-ls | terraform_fmt | tflint |
-| `sql` | sqls | sql-formatter | - |
-| `graphql` | graphql-language-service-cli | prettierd | - |
-| `nix` | nil | nixfmt | - |
-| `haskell` | haskell-language-server | ormolu | hlint |
-| `elixir` | elixir-ls | - | - |
-| `kotlin` | kotlin-language-server | ktfmt | ktlint |
-| `swift` | - | swiftformat | swiftlint |
-| `zig` | zls | - | - |
-| `vue` | vue-language-server | prettierd | - |
-| `svelte` | svelte-language-server | prettierd | - |
-| `astro` | astro-language-server | prettierd | - |
-| `prisma` | prisma-language-server | - | - |
-| `tailwindcss` | tailwindcss-language-server | - | - |
-| `shell` | bash-language-server | - | shellcheck |
-
-If a filetype is not in the list, a simple info message will be shown.
 
 ## Advanced Usage
 
@@ -482,9 +456,10 @@ This project includes guidelines for AI agents in [AGENTS.md](AGENTS.md). All AI
 
 ### Formatter/Linter not installing
 
-1. Ensure `conform.nvim` or `nvim-lint` is loaded before `catalog.setup()`
+1. If using `auto_install = { formatter = true }`, ensure `conform.nvim` is installed for formatters, or `nvim-lint` for linters
 2. Check the formatter/linter name matches the command in the respective plugin
-3. Some formatters may not be available in Mason
+3. Some formatters/linters may not be available in Mason
+4. Check logs with `opts = { debug = true }`
 
 ### Treesitter parsers not installing
 

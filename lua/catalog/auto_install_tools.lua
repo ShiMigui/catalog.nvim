@@ -1,59 +1,59 @@
 ---@class catalog.AutoInstallTools
 ---@field lsp? string|string[]
----@field conform? string|string[]
----@field lint? string|string[]
+---@field formatter? string|string[]
+---@field linter? string|string[]
 
 ---@type table<string, catalog.AutoInstallTools>
 local FT_TOOLS = {
 	-- Lua
 	lua = {
 		lsp = "lua-language-server",
-		conform = "stylua",
-		lint = "luacheck",
+		formatter = "stylua",
+		linter = "luacheck",
 	},
 
 	-- TypeScript / JavaScript
 	typescript = {
 		lsp = "typescript-language-server",
-		conform = "prettierd",
-		lint = "eslint-ls",
+		formatter = "prettierd",
+		linter = "eslint-ls",
 	},
 	typescriptreact = {
 		lsp = "typescript-language-server",
-		conform = "prettierd",
-		lint = "eslint-ls",
+		formatter = "prettierd",
+		linter = "eslint-ls",
 	},
 	javascript = {
 		lsp = "typescript-language-server",
-		conform = "prettierd",
-		lint = "eslint-ls",
+		formatter = "prettierd",
+		linter = "eslint-ls",
 	},
 	javascriptreact = {
 		lsp = "typescript-language-server",
-		conform = "prettierd",
-		lint = "eslint-ls",
+		formatter = "prettierd",
+		linter = "eslint-ls",
 	},
 	json = {
 		lsp = "json-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 	jsonc = {
 		lsp = "json-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Python
 	python = {
 		lsp = { "pylsp", "ruff-lsp" },
-		conform = { "black", "isort" },
-		lint = { "ruff", "mypy" },
+		formatter = { "black", "isort" },
+		linter = { "ruff", "mypy" },
 	},
 
 	-- Go
 	go = {
 		lsp = "gopls",
-		conform = "gofumpt",
-		lint = "golangci-lint",
+		formatter = "gofumpt",
+		linter = "golangci-lint",
 	},
 	gomod = {
 		lsp = "gopls",
@@ -65,25 +65,25 @@ local FT_TOOLS = {
 	-- Rust
 	rust = {
 		lsp = "rust-analyzer",
-		conform = "rustfmt",
+		formatter = "rustfmt",
 	},
 
 	-- C / C++
 	c = {
 		lsp = "clangd",
-		conform = "clang-format",
-		lint = "cpplint",
+		formatter = "clang-format",
+		linter = "cpplint",
 	},
 	cpp = {
 		lsp = "clangd",
-		conform = "clang-format",
-		lint = "cpplint",
+		formatter = "clang-format",
+		linter = "cpplint",
 	},
 
 	-- Java
 	java = {
 		lsp = "jdtls",
-		conform = "google-java-format",
+		formatter = "google-java-format",
 	},
 
 	-- C#
@@ -94,22 +94,22 @@ local FT_TOOLS = {
 	-- PHP
 	php = {
 		lsp = "intelephense",
-		conform = "php-cs-fixer",
-		lint = { "phpcs", "phpstan" },
+		formatter = "php-cs-fixer",
+		linter = { "phpcs", "phpstan" },
 	},
 
 	-- Ruby
 	ruby = {
 		lsp = "ruby-lsp",
-		conform = "rubocop",
-		lint = "rubocop",
+		formatter = "rubocop",
+		linter = "rubocop",
 	},
 
 	-- Haskell
 	haskell = {
 		lsp = "haskell-language-server",
-		conform = "ormolu",
-		lint = "hlint",
+		formatter = "ormolu",
+		linter = "hlint",
 	},
 
 	-- Elixir
@@ -125,20 +125,20 @@ local FT_TOOLS = {
 	-- Dart
 	dart = {
 		lsp = "dartls",
-		conform = "dart-format",
+		formatter = "dart-format",
 	},
 
 	-- Kotlin
 	kotlin = {
 		lsp = "kotlin-language-server",
-		conform = "ktfmt",
-		lint = "ktlint",
+		formatter = "ktfmt",
+		linter = "ktlint",
 	},
 
 	-- Swift
 	swift = {
-		conform = "swiftformat",
-		lint = "swiftlint",
+		formatter = "swiftformat",
+		linter = "swiftlint",
 	},
 
 	-- Zig
@@ -169,15 +169,15 @@ local FT_TOOLS = {
 	-- Shell / Bash
 	sh = {
 		lsp = "bash-language-server",
-		lint = "shellcheck",
+		linter = "shellcheck",
 	},
 	bash = {
 		lsp = "bash-language-server",
-		lint = "shellcheck",
+		linter = "shellcheck",
 	},
 	zsh = {
 		lsp = "bash-language-server",
-		lint = "shellcheck",
+		linter = "shellcheck",
 	},
 
 	-- PowerShell
@@ -188,42 +188,42 @@ local FT_TOOLS = {
 	-- HTML
 	html = {
 		lsp = "html-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- CSS
 	css = {
 		lsp = "css-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 	scss = {
 		lsp = "css-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 	less = {
 		lsp = "css-lsp",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Sass
 	sass = {
 		lsp = "some-sass-language-server",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- XML
 	xml = {
-		conform = "xmlformatter",
+		formatter = "xmlformatter",
 	},
 
 	-- YAML
 	yaml = {
 		lsp = "yaml-language-server",
-		lint = "yamllint",
+		linter = "yamllint",
 	},
 	yml = {
 		lsp = "yaml-language-server",
-		lint = "yamllint",
+		linter = "yamllint",
 	},
 
 	-- TOML
@@ -234,7 +234,7 @@ local FT_TOOLS = {
 	-- Markdown
 	markdown = {
 		lsp = "marksman",
-		lint = "markdownlint",
+		linter = "markdownlint",
 	},
 	markdown_inline = {
 		lsp = "marksman",
@@ -243,14 +243,14 @@ local FT_TOOLS = {
 	-- Docker
 	dockerfile = {
 		lsp = "dockerfile-language-server",
-		lint = "hadolint",
+		linter = "hadolint",
 	},
 
 	-- Terraform / HCL
 	terraform = {
 		lsp = "terraform-ls",
-		conform = "terraform_fmt",
-		lint = "tflint",
+		formatter = "terraform_fmt",
+		linter = "tflint",
 	},
 	hcl = {
 		lsp = "terraform-ls",
@@ -259,38 +259,38 @@ local FT_TOOLS = {
 	-- SQL
 	sql = {
 		lsp = "sqls",
-		conform = "sql-formatter",
+		formatter = "sql-formatter",
 	},
 
 	-- GraphQL
 	graphql = {
 		lsp = "graphql-language-service-cli",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Protobuf
 	proto = {
 		lsp = "protols",
-		conform = "buf",
-		lint = "protolint",
+		formatter = "buf",
+		linter = "protolint",
 	},
 
 	-- Nix
 	nix = {
 		lsp = "nil",
-		conform = "nixfmt",
+		formatter = "nixfmt",
 	},
 
 	-- Elm
 	elm = {
 		lsp = "elm-language-server",
-		conform = "elm-format",
+		formatter = "elm-format",
 	},
 
 	-- Clojure
 	clojure = {
 		lsp = "clojure-lsp",
-		lint = "clj-kondo",
+		linter = "clj-kondo",
 	},
 
 	-- F#
@@ -309,19 +309,19 @@ local FT_TOOLS = {
 	-- Vue
 	vue = {
 		lsp = "vue-language-server",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Svelte
 	svelte = {
 		lsp = "svelte-language-server",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Astro
 	astro = {
 		lsp = "astro-language-server",
-		conform = "prettierd",
+		formatter = "prettierd",
 	},
 
 	-- Angular
@@ -357,7 +357,7 @@ local FT_TOOLS = {
 	-- Ansible
 	ansible = {
 		lsp = "ansible-language-server",
-		lint = "ansible-lint",
+		linter = "ansible-lint",
 	},
 
 	-- Helm
@@ -368,7 +368,7 @@ local FT_TOOLS = {
 	-- CMake
 	cmake = {
 		lsp = "cmake-language-server",
-		lint = "cmakelint",
+		linter = "cmakelint",
 	},
 
 	-- Meson
@@ -441,7 +441,7 @@ local FT_TOOLS = {
 
 	-- Makefile
 	make = {
-		lint = "checkmake",
+		linter = "checkmake",
 	},
 
 	-- Caddyfile
@@ -477,7 +477,7 @@ local FT_TOOLS = {
 	-- OCaml
 	ocaml = {
 		lsp = "ocamllsp",
-		conform = "ocamlformat",
+		formatter = "ocamlformat",
 	},
 
 	-- Reason
@@ -488,7 +488,7 @@ local FT_TOOLS = {
 	-- PureScript
 	purescript = {
 		lsp = "purescript-language-server",
-		conform = "purescript-tidy",
+		formatter = "purescript-tidy",
 	},
 
 	-- Idris
@@ -529,7 +529,7 @@ local FT_TOOLS = {
 	-- Fortran
 	fortran = {
 		lsp = "fortls",
-		conform = "fprettify",
+		formatter = "fprettify",
 	},
 
 	-- Pascal
@@ -545,7 +545,7 @@ local FT_TOOLS = {
 	-- Objective-C
 	objc = {
 		lsp = "clangd",
-		conform = "clang-format",
+		formatter = "clang-format",
 	},
 
 	-- Arduino
@@ -556,7 +556,7 @@ local FT_TOOLS = {
 	-- Solidity
 	solidity = {
 		lsp = "solidity-ls",
-		lint = "solhint",
+		linter = "solhint",
 	},
 
 	-- Vyper
@@ -576,33 +576,33 @@ local FT_TOOLS = {
 
 	-- Git
 	gitcommit = {
-		lint = "commitlint",
+		linter = "commitlint",
 	},
 
 	-- ENV
 	dotenv = {
-		lint = "dotenv-linter",
+		linter = "dotenv-linter",
 	},
 
 	-- EditorConfig
 	editorconfig = {
-		lint = "editorconfig-checker",
+		linter = "editorconfig-checker",
 	},
 
 	-- Typst
 	typst = {
 		lsp = "tinymist",
-		conform = "typstyle",
+		formatter = "typstyle",
 	},
 
 	-- Pandoc Markdown
 	pandoc = {
-		lint = "vale",
+		linter = "vale",
 	},
 
 	-- Text
 	text = {
-		lint = "vale",
+		linter = "vale",
 	},
 }
 
