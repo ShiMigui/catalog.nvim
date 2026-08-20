@@ -2,7 +2,7 @@
 
 `catalog.nvim` is a Neovim plugin that automates package installation and setup through a provider system.
 
-It acts as an orchestration layer between package managers (providers) and integrations such as LSPs and formatters.
+It acts as an orchestration layer between package managers (providers) and integrations such as LSPs, formatters, linters, and treesitter.
 
 ## Installation
 
