@@ -18,6 +18,26 @@ return {
 	setup = function(opts)
 		opts = opts or {}
 
+		if type(opts) ~= "table" then
+			error("catalog.setup: opts must be a table")
+		end
+
+		if opts.lsp ~= nil and type(opts.lsp) ~= "table" then
+			error("catalog.setup: lsp must be a table")
+		end
+
+		if opts.lsp_config ~= nil and type(opts.lsp_config) ~= "table" then
+			error("catalog.setup: lsp_config must be a table")
+		end
+
+		if opts.conform ~= nil and type(opts.conform) ~= "boolean" then
+			error("catalog.setup: conform must be a boolean")
+		end
+
+		if opts.ensure_installed ~= nil and type(opts.ensure_installed) ~= "string" and type(opts.ensure_installed) ~= "table" then
+			error("catalog.setup: ensure_installed must be a string or table")
+		end
+
 		opts.log = opts.log or {}
 		local log = log_setup.set_log(opts.log, opts.silent_errors == true, opts.debug).log(scope)
 
