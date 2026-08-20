@@ -212,6 +212,7 @@ The `setup` function accepts a `catalog.Config` table:
 | `treesitter` | `catalog.TreesitterConfig` | Treesitter parser installation and configuration. |
 | `ensure_installed` | `string[]\|string` | Packages to install without setup. |
 | `auto_update` | `boolean` | Automatically update installed packages. |
+| `auto_install` | `catalog.AutoInstallConfig` | Auto-install tools by filetype. |
 | `silent_errors` | `boolean` | Disable error notifications. |
 | `debug` | `boolean` | Enable debug logging. |
 
@@ -314,6 +315,42 @@ Automatically updates all installed packages when the plugin loads.
 ```lua
 auto_update = true
 ```
+
+### Auto Install
+
+Automatically installs LSPs, formatters, and linters when opening a file of a specific filetype. This creates `FileType` autocmds that trigger installation on demand.
+
+```lua
+auto_install = {
+    -- Install LSPs by filetype
+    lsp = {
+        lua = "lua-language-server",
+        python = { "pylsp", "ruff-lsp" },
+        typescript = "typescript-language-server",
+        go = "gopls",
+        rust = "rust-analyzer",
+    },
+
+    -- Install formatters by filetype
+    conform = {
+        lua = "stylua",
+        python = "black",
+        typescript = "prettier",
+        go = "gofumpt",
+        rust = "rustfmt",
+    },
+
+    -- Install linters by filetype
+    lint = {
+        lua = "luacheck",
+        python = "ruff",
+        typescript = "eslint_d",
+        go = "golangci-lint",
+    },
+}
+```
+
+**Note:** Tools are only installed when you open a file with the matching filetype. Already installed tools are skipped.
 
 ## Advanced Usage
 
