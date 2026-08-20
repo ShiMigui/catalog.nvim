@@ -5,11 +5,17 @@ local scope = (...) or "catalog"
 ---@field lsp? catalog.LspIntegrationConfig
 ---@field lsp_config? catalog.LspDefaultConfig
 ---@field conform? boolean
+---@field lint? boolean
+---@field treesitter? catalog.TreesitterConfig
 ---@field ensure_installed? string[]|string
 ---@field auto_update? boolean
 ---@field silent_errors? boolean
 ---@field debug? boolean
 ---@field log? table
+
+---@class catalog.TreesitterConfig
+---@field ensure_installed? string[]|string
+---@field config? table
 
 ---@class catalog.Integration
 ---@field setup fun(opts: any): nil
@@ -35,6 +41,14 @@ return {
 			error("catalog.setup: conform must be a boolean")
 		end
 
+		if opts.lint ~= nil and type(opts.lint) ~= "boolean" then
+			error("catalog.setup: lint must be a boolean")
+		end
+
+		if opts.treesitter ~= nil and type(opts.treesitter) ~= "table" then
+			error("catalog.setup: treesitter must be a table")
+		end
+
 		if opts.ensure_installed ~= nil and type(opts.ensure_installed) ~= "string" and type(opts.ensure_installed) ~= "table" then
 			error("catalog.setup: ensure_installed must be a string or table")
 		end
@@ -58,6 +72,14 @@ return {
 
 		if opts.conform then
 			require("catalog.conform").setup(opts.conform)
+		end
+
+		if opts.lint then
+			require("catalog.lint").setup(opts.lint)
+		end
+
+		if opts.treesitter then
+			require("catalog.treesitter").setup(opts.treesitter)
 		end
 
 		if opts.ensure_installed then
