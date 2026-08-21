@@ -1,64 +1,75 @@
-local function format(scope, msg, ...)
-	if select("#", ...) > 0 then
-		msg = msg:format(...)
-	end
-	return scope .. msg
-end
+---Logging system for catalog.nvim.
+---
+---```lua
+---local log = require("catalog.log").new("provider")
+---log.inf("resolved %d package(s)", n)
+---```
 
 local lvls = vim.log.levels
 
 ---@type table<vim.log.levels, boolean>
-local log = {
-	[lvls.ERROR] = false,
-	[lvls.WARN] = false,
-	[lvls.DEBUG] = false,
+local enabled = {
+	[lvls.ERROR] = true,
+	[lvls.WARN] = true,
 	[lvls.INFO] = true,
+	[lvls.DEBUG] = false,
 }
 
-local function notify_builder(level, scope, msg_scope)
-	local cfg = log[scope] or log
-	local should_log = cfg[level]
-
-	if should_log then
-		return function(msg, ...)
-			vim.notify(format(msg_scope, msg, ...), level)
+---@param level vim.log.levels
+---@param prefix string
+---@return fun(msg: string, ...: any)
+local function build(level, prefix)
+	return function(msg, ...)
+		if enabled[level] then
+			local text = select("#", ...) > 0 and msg:format(...) or msg
+			vim.notify(prefix .. text, level)
 		end
 	end
-	return function(_, _) end
 end
+
+---@class catalog.Logger
+---@field dbg fun(msg: string, ...: any) Debug message.
+---@field inf fun(msg: string, ...: any) Info message.
+---@field wrn fun(msg: string, ...: any) Warning message.
+---@field err fun(msg: string, ...: any) Error message.
+---@field header fun() Logs "starting" on the first call and "finishing" afterwards.
+
+---@type table<string, catalog.Logger>
+local cache = {}
 
 local M = {}
 
-M.log = function(scope)
-	local msg_scope = "[" .. scope .. "] "
+---Creates a logger tagged with `scope`, or returns the cached one.
+---State (e.g. `header`) is shared between all `new(scope)` calls.
+---@param scope string
+---@return catalog.Logger
+function M.new(scope)
+	local cached = cache[scope]
+	if cached then
+		return cached
+	end
 
-	local start = true
-	local dbg = notify_builder(lvls.DEBUG, scope, msg_scope)
-	return {
+	local prefix = "[" .. scope .. "] "
+	local dbg = build(lvls.DEBUG, prefix)
+	local started = false
+	local logger = {
 		dbg = dbg,
-		wrn = notify_builder(lvls.WARN, scope, msg_scope),
-		err = notify_builder(lvls.ERROR, scope, msg_scope),
-		inf = notify_builder(lvls.INFO, scope, msg_scope),
-
+		inf = build(lvls.INFO, prefix),
+		wrn = build(lvls.WARN, prefix),
+		err = build(lvls.ERROR, prefix),
 		header = function()
-			if start then
-				dbg("starting")
-				start = false
-			else
-				dbg("finishing")
-			end
+			started = not started
+			dbg(started and "starting" or "finishing")
 		end,
 	}
+	cache[scope] = logger
+	return logger
 end
 
-M.set_log = function(tbl, silent_logs, debug)
-	log = vim.tbl_deep_extend("force", log, tbl)
-
-	log[lvls.WARN] = not silent_logs
-	log[lvls.ERROR] = log[lvls.WARN]
-	log[lvls.DEBUG] = debug
-
-	return M
+---Enables or disables debug messages.
+---@param debug? boolean
+function M.setup(debug)
+	enabled[lvls.DEBUG] = debug == true
 end
 
 return M

@@ -1,22 +1,15 @@
--- Minimal init for running tests with plenary.nvim
+-- Minimal init for running tests with plenary.nvim.
 
--- Add plugin to runtime path
-vim.opt.runtimepath:append(".")
+-- Project root first so `require("catalog")` resolves to the working copy.
+vim.opt.rtp:prepend(vim.fn.getcwd())
 
--- Add plenary.nvim to runtime path (assuming it's installed)
--- You may need to adjust this path based on your setup
-local plenary_path = vim.fn.stdpath("data") .. "/lazy/plenary.nvim"
-if vim.fn.isdirectory(plenary_path) == 1 then
-	vim.opt.runtimepath:append(plenary_path)
+-- plenary.nvim location differs between CI (vendor pack) and local setups (lazy.nvim).
+local data = vim.fn.stdpath("data")
+for _, path in ipairs({
+	data .. "/site/pack/vendor/start/plenary.nvim",
+	data .. "/lazy/plenary.nvim",
+}) do
+	if vim.fn.isdirectory(path) == 1 then
+		vim.opt.rtp:prepend(path)
+	end
 end
-
--- Disable swap file and backup for tests
-vim.opt.swapfile = false
-vim.opt.backup = false
-vim.opt.writebackup = false
-
--- Set leader key (required by some plugins)
-vim.g.mapleader = " "
-
--- Load the plugin
-require("catalog")
