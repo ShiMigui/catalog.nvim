@@ -1,0 +1,14 @@
+---Type definitions for the LSP integration.
+---
+---This module only carries annotations (`@meta`) and is never loaded at
+---runtime; the implementation lives in `catalog.Lsp.Config`.
+
+---Handle over a language server configuration.
+---@class catalog.Lsp
+---Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
+---@field name string
+---Configuration merged so far; starts empty.
+---@field config vim.lsp.Config
+---Deep-merges `cfg` into [config](lua://catalog.Lsp.config) (new values win)
+---and returns the same instance, so calls can be chained.
+---@field update fun(self: catalog.Lsp, cfg: vim.lsp.Config): catalog.Lsp

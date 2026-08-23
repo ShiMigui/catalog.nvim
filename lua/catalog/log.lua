@@ -1,75 +1,108 @@
 ---Logging system for catalog.nvim.
 ---
+---Loggers are scoped: each scope gets a cached logger whose messages are
+---prefixed with `[scope] `.
+---
 ---```lua
 ---local log = require("catalog.log").new("provider")
----log.inf("resolved %d package(s)", n)
+---log:inf("resolved %d package(s)", n)
 ---```
-
-local lvls = vim.log.levels
-
+local logger = {}
 ---@type table<vim.log.levels, boolean>
-local enabled = {
-	[lvls.ERROR] = true,
-	[lvls.WARN] = true,
-	[lvls.INFO] = true,
-	[lvls.DEBUG] = false,
-}
+local enabled = {}
+local cache = {}
+local levels = vim.log.levels
 
+---Scoped logger; messages are prefixed with `[scope] `.
+---@class catalog.Logger
+---@field prefix string
+---Formats `msg` and notifies it when `level` is enabled. The text is always
+---returned, even when the level is disabled.
+---@field message fun(self: catalog.Logger, level: vim.log.levels, msg: string, ...: any): string
+---Debug message; only notified after setup(true).
+---@field dbg fun(self: catalog.Logger, msg: string, ...: any): string
+---Error message.
+---@field err fun(self: catalog.Logger, msg: string, ...: any): string
+---Info message.
+---@field inf fun(self: catalog.Logger, msg: string, ...: any): string
+---Warning message.
+---@field wrn fun(self: catalog.Logger, msg: string, ...: any): string
+
+---Formats a message and notifies it when `level` is enabled.
 ---@param level vim.log.levels
----@param prefix string
----@return fun(msg: string, ...: any)
-local function build(level, prefix)
-	return function(msg, ...)
-		if enabled[level] then
-			local text = select("#", ...) > 0 and msg:format(...) or msg
-			vim.notify(prefix .. text, level)
-		end
+---@param msg string Format string, or plain message when no extra args.
+---@vararg any Format arguments.
+---@return string text The formatted message.
+function logger:message(level, msg, ...)
+	local text = select("#", ...) > 0 and msg:format(...) or msg
+
+	if enabled[level] then
+		vim.notify(self.prefix .. text, level)
 	end
+
+	return text
 end
 
----@class catalog.Logger
----@field dbg fun(msg: string, ...: any) Debug message.
----@field inf fun(msg: string, ...: any) Info message.
----@field wrn fun(msg: string, ...: any) Warning message.
----@field err fun(msg: string, ...: any) Error message.
----@field header fun() Logs "starting" on the first call and "finishing" afterwards.
+---Logs at DEBUG level (only after setup(true)).
+---@param msg string
+---@vararg any
+---@return string
+function logger:dbg(msg, ...)
+	return self:message(levels.DEBUG, msg, ...)
+end
 
----@type table<string, catalog.Logger>
-local cache = {}
+---Logs at ERROR level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:err(msg, ...)
+	return self:message(levels.ERROR, msg, ...)
+end
+
+---Logs at INFO level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:inf(msg, ...)
+	return self:message(levels.INFO, msg, ...)
+end
+
+---Logs at WARN level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:wrn(msg, ...)
+	return self:message(levels.WARN, msg, ...)
+end
 
 local M = {}
 
----Creates a logger tagged with `scope`, or returns the cached one.
----State (e.g. `header`) is shared between all `new(scope)` calls.
+---Configures which levels are notified.
+---
+---When `silent` is true, ERROR/WARN/INFO are muted; when `debug` is true,
+---DEBUG is notified as well.
+---@param debug boolean Notify DEBUG messages.
+---@param silent boolean Mute ERROR/WARN/INFO messages.
+function M.setup(debug, silent)
+	local showMessages = not silent
+
+	enabled = {
+		[levels.DEBUG] = debug,
+		[levels.ERROR] = showMessages,
+		[levels.WARN] = showMessages,
+		[levels.INFO] = showMessages,
+	}
+end
+
+---Returns the logger tagged with `scope`, creating it on first use.
 ---@param scope string
 ---@return catalog.Logger
 function M.new(scope)
-	local cached = cache[scope]
-	if cached then
-		return cached
+	if not cache[scope] then
+		cache[scope] = setmetatable({ prefix = "[" .. scope .. "] " }, { __index = logger })
 	end
 
-	local prefix = "[" .. scope .. "] "
-	local dbg = build(lvls.DEBUG, prefix)
-	local started = false
-	local logger = {
-		dbg = dbg,
-		inf = build(lvls.INFO, prefix),
-		wrn = build(lvls.WARN, prefix),
-		err = build(lvls.ERROR, prefix),
-		header = function()
-			started = not started
-			dbg(started and "starting" or "finishing")
-		end,
-	}
-	cache[scope] = logger
-	return logger
-end
-
----Enables or disables debug messages.
----@param debug? boolean
-function M.setup(debug)
-	enabled[lvls.DEBUG] = debug == true
+	return cache[scope]
 end
 
 return M

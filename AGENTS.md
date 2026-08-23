@@ -46,6 +46,15 @@ Before making any changes:
 - Do not add unnecessary features
 - Keep changes focused and minimal
 
+### 5. DX-First, Concise Code
+
+**All generated code must prioritize Developer Experience (DX) and be as concise as possible.**
+
+- Design APIs that are intuitive, predictable, and pleasant to use
+- Prefer clear names and sensible defaults over configuration
+- Write the shortest correct implementation; no boilerplate or dead code
+- Conciseness must never sacrifice readability or correctness
+
 ## Development Workflow
 
 ### Step 1: Understand the Task
@@ -249,6 +258,7 @@ AI agents must:
 - ✅ Use conventional commits
 - ✅ Make minimal changes
 - ✅ Read before writing
+- ✅ Write DX-first, concise code
 - ❌ Modify tests (unless asked)
 - ❌ Commit to main
 - ❌ Skip testing
