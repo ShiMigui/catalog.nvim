@@ -8,12 +8,12 @@ local default_config = require("catalog.lsp").default_config
 
 local function lsp_auto_install(name)
 	local p = Providers.try_resolve(name)
-	log.dbg("Trying auto-install '%s'", name)
+	log:dbg("Trying auto-install '%s'", name)
 	if not p or lsp.configured_lsps[name] then
 		return
 	end
 
-	log.dbg("Auto-installing '%s'", name)
+	log:dbg("Auto-installing '%s'", name)
 	p:install()
 	p.lsp:enable()
 	p.lsp:update(default_config)
@@ -45,7 +45,7 @@ return {
 			table.insert(cbs, formatter_auto_install)
 		end
 
-		log.header()
+		log:header()
 		vim.api.nvim_create_autocmd("FileType", {
 			callback = function()
 				local ft = vim.bo.filetype
@@ -60,6 +60,6 @@ return {
 				end
 			end,
 		})
-		log.header()
+		log:header()
 	end,
 }

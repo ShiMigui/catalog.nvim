@@ -28,10 +28,10 @@ local function convert(pkg)
 		install = function(self)
 			if not self:installed() then
 				pkg:install()
-				log.inf("%s is being installed", self.name)
+				log:inf("%s is being installed", self.name)
 				return
 			end
-			log.dbg("%s is already installed", self.name)
+			log:dbg("%s is already installed", self.name)
 		end,
 	}
 end

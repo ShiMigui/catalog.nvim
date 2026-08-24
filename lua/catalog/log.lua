@@ -5,7 +5,7 @@
 ---
 ---```lua
 ---local log = require("catalog.log").new("provider")
----log.inf("resolved %d package(s)", n)
+---log:inf("resolved %d package(s)", n)
 ---```
 local M = {}
 
@@ -18,68 +18,77 @@ local enabled = {
 local cache = {}
 local levels = vim.log.levels
 
+---Scoped logger; messages are prefixed with `[scope] `.
+---@class catalog.Logger
+---@field prefix string
+---Formats `msg` and notifies it when `level` is enabled. The text is always
+---returned, even when the level is disabled.
+---@field message fun(self: catalog.Logger, level: vim.log.levels, msg: string, ...: any): string
+---Debug message; only notified after setup(true).
+---@field dbg fun(self: catalog.Logger, msg: string, ...: any): string
+---Error message.
+---@field err fun(self: catalog.Logger, msg: string, ...: any): string
+---Info message.
+---@field inf fun(self: catalog.Logger, msg: string, ...: any): string
+---Warning message.
+---@field wrn fun(self: catalog.Logger, msg: string, ...: any): string
+---Alternates between `starting`/`finishing` debug messages, marking setup progress.
+---@field header fun(self: catalog.Logger)
+
+---Shared prototype; all cached loggers index into this table, so the methods
+---exist only once in memory regardless of how many scopes are created.
+local logger = {}
+
 ---Formats a message and notifies it when `level` is enabled.
 ---@param level vim.log.levels
----@param prefix string
 ---@param msg string Format string, or plain message when no extra args.
 ---@vararg any Format arguments.
 ---@return string text The formatted message.
-local function message(level, prefix, msg, ...)
+function logger:message(level, msg, ...)
 	if not enabled[level] then
 		return msg
 	end
 
 	local text = select("#", ...) > 0 and msg:format(...) or msg
-	vim.notify(prefix .. text, level)
+	vim.notify(self.prefix .. text, level)
 	return text
 end
 
----Scoped logger; messages are prefixed with `[scope] `.
----@class catalog.Logger
----Debug message; only notified after setup(true).
----@field dbg fun(msg: string, ...: any): string
----Error message.
----@field err fun(msg: string, ...: any): string
----Info message.
----@field inf fun(msg: string, ...: any): string
----Warning message.
----@field wrn fun(msg: string, ...: any): string
----Alternates between `starting`/`finishing` debug messages, marking setup progress.
----@field header fun()
+---Logs at DEBUG level (only after setup(true)).
+---@param msg string
+---@vararg any
+---@return string
+function logger:dbg(msg, ...)
+	return self:message(levels.DEBUG, msg, ...)
+end
 
----Returns the logger tagged with `scope`, creating it on first use.
----@param scope string
----@return catalog.Logger
-function M.new(scope)
-	if cache[scope] then
-		return cache[scope]
-	end
+---Logs at ERROR level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:err(msg, ...)
+	return self:message(levels.ERROR, msg, ...)
+end
 
-	local prefix = "[" .. scope .. "] "
-	local started = false
+---Logs at INFO level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:inf(msg, ...)
+	return self:message(levels.INFO, msg, ...)
+end
 
-	---@type catalog.Logger
-	local logger = {
-		dbg = function(msg, ...)
-			return message(levels.DEBUG, prefix, msg, ...)
-		end,
-		err = function(msg, ...)
-			return message(levels.ERROR, prefix, msg, ...)
-		end,
-		inf = function(msg, ...)
-			return message(levels.INFO, prefix, msg, ...)
-		end,
-		wrn = function(msg, ...)
-			return message(levels.WARN, prefix, msg, ...)
-		end,
-		header = function()
-			started = not started
-			message(levels.DEBUG, prefix, started and "starting" or "finishing")
-		end,
-	}
+---Logs at WARN level.
+---@param msg string
+---@vararg any
+---@return string
+function logger:wrn(msg, ...)
+	return self:message(levels.WARN, msg, ...)
+end
 
-	cache[scope] = logger
-	return logger
+function logger:header()
+	self.started = not self.started
+	self:message(levels.DEBUG, self.started and "starting" or "finishing")
 end
 
 ---Configures which levels are notified.
@@ -99,6 +108,17 @@ function M.setup(debug, silent)
 	}
 
 	return M
+end
+
+---Returns the logger tagged with `scope`, creating it on first use.
+---@param scope string
+---@return catalog.Logger
+function M.new(scope)
+	if not cache[scope] then
+		cache[scope] = setmetatable({ prefix = "[" .. scope .. "] " }, { __index = logger })
+	end
+
+	return cache[scope]
 end
 
 return M

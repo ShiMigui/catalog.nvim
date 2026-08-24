@@ -29,18 +29,18 @@ local M = {
 ---`opts.default` into the internal default configuration first.
 ---@param opts catalog.lsp_opts
 function M.setup(opts)
-	log.header()
+	log:header()
 	local default, config_by = opts.default, opts.config_by
 
 	if default and type(default) == "table" then
-		log.dbg("Overwriting internal default config with user default config")
+		log:dbg("Overwriting internal default config with user default config")
 		M.default_config = vim.tbl_deep_extend("force", M.default_config, default)
 	end
 
 	if config_by then
 		local config_by_type = type(config_by)
 		if config_by_type ~= "table" then
-			log.err("config_by must be a table, got %s", config_by_type)
+			log:err("config_by must be a table, got %s", config_by_type)
 		end
 
 		local pkgs = ensure_installed(vim.tbl_keys(config_by))
@@ -51,7 +51,7 @@ function M.setup(opts)
 		end
 	end
 
-	log.header()
+	log:header()
 end
 
 return M

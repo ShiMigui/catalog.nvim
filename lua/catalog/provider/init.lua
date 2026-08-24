@@ -37,10 +37,10 @@ local function try_resolve(name)
 	end
 
 	for _, provider in pairs(list) do
-		log.dbg("Trying to get package '%s' from '%s'", name, provider.name)
+		log:dbg("Trying to get package '%s' from '%s'", name, provider.name)
 		pkg_cache[name] = provider.resolve(name) or false
 		if pkg_cache[name] then
-			log.dbg("Package '%s' founded by '%s'", name, provider.name)
+			log:dbg("Package '%s' founded by '%s'", name, provider.name)
 			return pkg_cache[name]
 		end
 	end
@@ -51,7 +51,7 @@ return {
 	---@param name string
 	---@param resolve fun(name: string): catalog.Package? Package resolver.
 	append = function(name, resolve)
-		log.dbg("Adding %s to provider list", name)
+		log:dbg("Adding %s to provider list", name)
 		list[name] = { name = name, resolve = resolve }
 	end,
 	try_resolve = try_resolve,
@@ -70,9 +70,9 @@ return {
 		end
 
 		if pkg == false then
-			log.err("Package '%s' is already in cache, and was not found!", name)
+			log:err("Package '%s' is already in cache, and was not found!", name)
 		elseif pkg == nil then
-			log.err("Package '%s' not found", name)
+			log:err("Package '%s' not found", name)
 		end
 	end,
 }

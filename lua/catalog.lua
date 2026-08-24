@@ -62,7 +62,7 @@ local function setup(opts)
 	opts = normalize_opts(opts or {})
 
 	local log = require("catalog.log").setup(opts.debug, opts.silent).new("setup")
-	log.dbg("Starting catalog plugin setup")
+	log:dbg("Starting catalog plugin setup")
 
 	require("catalog.provider.mason") -- Registers the mason provider
 
@@ -74,7 +74,7 @@ local function setup(opts)
 		require("catalog.auto_install").setup(opts.auto_install)
 	end
 
-	log.dbg("Finished process")
+	log:dbg("Finished process")
 end
 
 return {

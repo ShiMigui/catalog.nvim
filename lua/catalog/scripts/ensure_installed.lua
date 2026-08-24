@@ -8,7 +8,7 @@ local cache = {}
 ---@param list string[]
 ---@return table<string, catalog.Package>
 return function(list)
-	log.header()
+	log:header()
 	local map = {}
 	for _, name in pairs(list) do
 		if cache[name] == nil then

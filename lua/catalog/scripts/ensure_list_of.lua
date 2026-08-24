@@ -12,12 +12,12 @@ return function(value, t)
 	end
 
 	if type(value) ~= "table" then
-		return nil, log.err("Type of %s is not %s", value, t)
+		return nil, log:err("Type of %s is not %s", value, t)
 	end
 
 	for _, v in pairs(value) do
 		if type(v) ~= t then
-			return nil, log.err("Type of %s is not %s", v, t)
+			return nil, log:err("Type of %s is not %s", v, t)
 		end
 	end
 
