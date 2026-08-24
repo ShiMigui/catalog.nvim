@@ -22,25 +22,32 @@ local M = {
 		capabilities = vim.lsp.protocol.make_client_capabilities(),
 		flags = { debounce_text_changes = 150 },
 	},
+	configured_lsps = {},
 }
 
----Installs and enables every server in `opts.config_by_lsp`, merging
+---Installs and enables every server in `opts.config_by`, merging
 ---`opts.default` into the internal default configuration first.
 ---@param opts catalog.lsp_opts
 function M.setup(opts)
 	log.header()
-	local default, config_by_lsp = opts.default, opts.config_by_lsp
+	local default, config_by = opts.default, opts.config_by
 
 	if default and type(default) == "table" then
 		log.dbg("Overwriting internal default config with user default config")
 		M.default_config = vim.tbl_deep_extend("force", M.default_config, default)
 	end
 
-	if config_by_lsp and type(config_by_lsp) == "table" then
-		local pkgs = ensure_installed(vim.tbl_keys(config_by_lsp))
+	if config_by then
+		local config_by_type = type(config_by)
+		if config_by_type ~= "table" then
+			log.err("config_by must be a table, got %s", config_by_type)
+		end
+
+		local pkgs = ensure_installed(vim.tbl_keys(config_by))
 		for name, pkg in pairs(pkgs) do
-			pkg.lsp:update(config_by_lsp[name])
+			pkg.lsp:update(config_by[name])
 			pkg.lsp:enable()
+			M.configured_lsps[name] = pkg
 		end
 	end
 
