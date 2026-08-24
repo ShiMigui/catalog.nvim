@@ -7,7 +7,7 @@
 ---local log = require("catalog.log").new("provider")
 ---log:inf("resolved %d package(s)", n)
 ---```
-local logger = {}
+local logger = { setupInProgress = false }
 ---@type table<vim.log.levels, boolean>
 local enabled = {}
 local cache = {}
@@ -27,6 +27,8 @@ local levels = vim.log.levels
 ---@field inf fun(self: catalog.Logger, msg: string, ...: any): string
 ---Warning message.
 ---@field wrn fun(self: catalog.Logger, msg: string, ...: any): string
+---Status is in progress message
+---@field header fun()
 
 ---Formats a message and notifies it when `level` is enabled.
 ---@param level vim.log.levels
@@ -75,6 +77,15 @@ function logger:wrn(msg, ...)
 	return self:message(levels.WARN, msg, ...)
 end
 
+function logger:header()
+	if self.setupInProgress then
+		self:dbg("Finishing setup()...")
+	else
+		self:dbg("Starting setup()...")
+	end
+	self.setupInProgress = not self.setupInProgress
+end
+
 local M = {}
 
 ---Configures which levels are notified.
@@ -92,6 +103,8 @@ function M.setup(debug, silent)
 		[levels.WARN] = showMessages,
 		[levels.INFO] = showMessages,
 	}
+
+	return M
 end
 
 ---Returns the logger tagged with `scope`, creating it on first use.
