@@ -6,7 +6,7 @@
 
 ---@alias catalog.lsp_opts {
 ---   default: vim.lsp.Config,
----   config_by_lsp: table<string, vim.lsp.Config>,
+---   config_by: table<string, vim.lsp.Config>,
 ---}
 
 ---User configuration options.
@@ -16,7 +16,7 @@
 ---@class catalog.Opts
 ---Auto-install tools when a filetype is opened.
 ---`true` enables every tool kind; a table toggles each kind individually.
----@field auto_enable? table<'lsp'|'formatter'|'linter', boolean> | boolean
+---@field auto_install? table<'lsp'|'formatter'|'linter', boolean> | boolean
 ---Package names to install eagerly during setup.
 ---@field ensure_installed? string[]
 ---Per-server LSP configurations merged on top of the defaults, keyed by server name.
@@ -26,7 +26,7 @@
 
 ---@type catalog.Opts
 local default_opts = {
-	auto_enable = true,
+	auto_install = true,
 	debug = false,
 	silent = false,
 }
@@ -48,9 +48,9 @@ local handlers = {
 local function normalize_opts(opts)
 	opts = vim.tbl_deep_extend("force", default_opts, opts)
 
-	if opts.auto_enable then
-		local handler = handlers[type(opts.auto_enable)]
-		opts.auto_enable = handler and handler(opts.auto_enable) or nil
+	if opts.auto_install then
+		local handler = handlers[type(opts.auto_install)]
+		opts.auto_install = handler and handler(opts.auto_install) or nil
 	end
 
 	return opts
@@ -68,6 +68,10 @@ local function setup(opts)
 
 	if opts.lsp then
 		require("catalog.lsp").setup(opts.lsp)
+	end
+
+	if opts.auto_install then
+		require("catalog.auto_install").setup(opts.auto_install)
 	end
 
 	log.dbg("Finished process")
