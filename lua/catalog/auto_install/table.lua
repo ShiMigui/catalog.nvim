@@ -1,4 +1,4 @@
-local ft_tools = {
+return {
 	lua = { lsp = "lua-language-server", formatter = "stylua", linter = "luacheck" },
 	typescript = { lsp = "typescript-language-server", formatter = "prettierd", linter = "eslint-ls" },
 	typescriptreact = { lsp = "typescript-language-server", formatter = "prettierd", linter = "eslint-ls" },
@@ -114,5 +114,3 @@ local ft_tools = {
 	pandoc = { linter = "vale" },
 	text = { linter = "vale" },
 }
-
-return ft_tools
