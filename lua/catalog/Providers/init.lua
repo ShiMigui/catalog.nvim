@@ -31,7 +31,7 @@ local log = require("catalog.log").new("Providers")
 ---@type table<string, catalog.Provider>
 local list = {}
 ---Cache of previously resolved packages.
----@type catalog.PkgByName
+---@type table<string, catalog.Pkg|boolean>
 local pkgCache = {}
 
 return {
@@ -51,18 +51,21 @@ return {
 	---@return catalog.Pkg?
 	package = function(name)
 		if pkgCache[name] ~= nil then
+			if pkgCache[name] == false then
+				log:err("Package '%s' is already in cache, and was not found!", name)
+				return
+			end
 			return pkgCache[name]
 		end
 
 		for _, provider in pairs(list) do
 			log:dbg("Trying to get package '%s' from '%s'", name, provider.name)
-			local pkg = provider.package(name)
-			if pkg then
-				log:dbg("Package '%s' founded by '%s'", provider.name)
-				pkgCache[name] = pkg
-				return pkg
+			pkgCache[name] = provider.package(name) or false
+			if pkgCache[name] then
+				log:dbg("Package '%s' founded by '%s'", name, provider.name)
+				return pkgCache[name]
 			end
-			return nil, log:err("Package '%' not found", name)
 		end
+		log:err("Package '%s' not found", name)
 	end,
 }
