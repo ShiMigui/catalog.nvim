@@ -39,6 +39,7 @@ local handlers = {
 		ai.formatter = ai.formatter == true
 		ai.linter = ai.linter == true
 		ai.lsp = ai.lsp == true
+		return ai
 	end,
 }
 
