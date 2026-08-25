@@ -41,6 +41,7 @@ function M.setup(opts)
 		local config_by_type = type(config_by)
 		if config_by_type ~= "table" then
 			log:err("config_by must be a table, got %s", config_by_type)
+			return
 		end
 
 		local pkgs = ensure_installed(vim.tbl_keys(config_by))
