@@ -1,94 +1,91 @@
----@type table<string, table<'lsp'|'formatter'|'linter', catalog.Package>|boolean>
+---@type table<string, boolean>
 local seen_ft = {}
 local lsp = require("catalog.lsp")
 local log = require("catalog.log").new("auto_install")
 local pkgs_table = require("catalog.auto_install.table")
-local Providers = require("catalog.provider")
-local default_config = require("catalog.lsp").default_config
+local provider = require("catalog.provider")
 local ensure_list_of = require("catalog.scripts.ensure_list_of")
 
-local function lsp_auto_install(tbl)
-	local name = tbl.lsp
-	local p = Providers.try_resolve(name)
-	log:dbg("Trying auto-install '%s'", name)
-	if not p or lsp.configured_lsps[name] then
-		log:dbg("Package is not availible '%s'", name)
-		return
+---Builds an installer for one tool kind: resolves the package by name and,
+---when found, hands it to `handle`.
+---@param kind string Tool category ('lsp'|'formatter'|'linter'), for log context.
+---@param handle fun(pkg: catalog.Package) Runs when the package resolves.
+---@return fun(name: string)
+local function installer(kind, handle)
+	return function(name)
+		log:dbg("Trying to auto-install %s '%s'", kind, name)
+		local pkg = provider.try_resolve(name)
+		if not pkg then
+			log:dbg("No provider resolved '%s'", name)
+			return
+		end
+		handle(pkg)
 	end
-
-	if not lsp.configured_lsps[name] then
-		log:dbg("Auto-installing '%s'", name)
-		p:install()
-		p.lsp:update(default_config)
-		p.lsp:enable()
-	else
-		log:dbg("LSP already has been configured '%s'", name)
-	end
-	return p
 end
 
-local function formatter_auto_install(tbl)
-	local name = tbl.formatter
-	log:dbg("Trying auto-install '%s'", name)
-	local p = Providers.try_resolve(name)
-	if not p then
-		log:dbg("Package is not availible '%s'", name)
-		return
-	end
-	return p
-end
+local installers = {
+	lsp = installer("lsp", function(pkg)
+		if not pkg.lsp then
+			log:wrn("Package '%s' has no lspconfig mapping, skipping", pkg.name)
+			return
+		end
+		if lsp.configured_lsps[pkg.name] then
+			log:dbg("LSP '%s' already configured", pkg.name)
+			return
+		end
 
-local function linter_auto_install(tbl)
-	local name = tbl.linter
-	log:dbg("Trying auto-install '%s'", name)
-	local p = Providers.try_resolve(name)
-	if not p then
-		log:dbg("Package is not availible '%s'", name)
-		return
-	end
-	return p
-end
+		pkg:install()
+		pkg.lsp:update(lsp.default_config)
+		pkg.lsp:enable()
+		lsp.configured_lsps[pkg.name] = pkg
+	end),
+	formatter = installer("formatter", function(pkg)
+		pkg:install()
+	end),
+	linter = installer("linter", function(pkg)
+		pkg:install()
+	end),
+}
 
 return {
-	---comment
+	---Registers a FileType autocommand that installs, once per filetype, every
+	---tool mapped in `pkgs_table` whose kind is enabled in `opts`.
 	---@param opts table<'lsp'|'formatter'|'linter', boolean>
 	setup = function(opts)
 		local cbs = {}
-
-		if opts.lsp then
-			cbs["lsp"] = lsp_auto_install
-		end
-
-		if opts.linter then
-			cbs["linter"] = linter_auto_install
-		end
-
-		if opts.formatter then
-			cbs["formatter"] = formatter_auto_install
+		for kind, install in pairs(installers) do
+			if opts[kind] then
+				cbs[kind] = install
+			end
 		end
 
 		log:header()
-		if #cbs == 0 then
-			log:dbg("auto-install fast exit, there are no auto-install groups enabled")
+		if next(cbs) == nil then
+			log:dbg("Fast exit, there are no auto-install groups enabled")
 			log:header()
 			return
 		end
+
 		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("catalog.auto_install", { clear = true }),
 			callback = function()
 				local ft = vim.bo.filetype
-				if seen_ft[ft] ~= nil then
+				if seen_ft[ft] then
 					return
 				end
 
 				local tbl = pkgs_table[ft]
-				seen_ft[ft] = tbl
+				seen_ft[ft] = tbl ~= nil
 				if not tbl then
 					return
 				end
 
 				for cat, list in pairs(tbl) do
-					for _, pkg in pairs(ensure_list_of(list, "string") or {}) do
-						cbs[cat](pkg)
+					local cb = cbs[cat]
+					if cb then
+						for _, name in ipairs(ensure_list_of(list, "string") or {}) do
+							cb(name)
+						end
 					end
 				end
 			end,
