@@ -44,6 +44,8 @@ local function try_resolve(name)
 			return pkg_cache[name]
 		end
 	end
+
+	return pkg_cache[name]
 end
 
 return {
