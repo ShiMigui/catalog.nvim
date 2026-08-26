@@ -1,8 +1,11 @@
 ---catalog.nvim entry point.
 ---
----Bootstraps every integration from a single call:
+---Bootstraps every integration from a single call. Providers are NOT
+---registered here: require whichever you want beforehand, keeping the setup
+---fully modular.
 ---
 ---```lua
+---require("catalog.provider.mason") -- register the built-in provider (or your own)
 ---require("catalog").setup({
 ---   debug = false,
 ---   silent = false,
@@ -87,8 +90,7 @@ local function setup(opts)
 	require("catalog.log").setup(opts.debug, opts.silent)
 	log:dbg("Starting catalog plugin setup")
 
-	-- Registers the built-in mason provider before any consumer asks for packages
-	require("catalog.provider.mason")
+	-- Seeds the session cache from every provider the user has registered
 	require("catalog.provider").load_installed()
 
 	if opts.ensure_installed then

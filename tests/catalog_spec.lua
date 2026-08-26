@@ -11,7 +11,6 @@ describe("catalog", function()
 		ensure_installed_calls = {}
 
 		local logger = { dbg = function() end, header = function() end }
-		package.loaded["catalog.provider.mason"] = {}
 		package.loaded["catalog.provider"] = {
 			load_installed = function()
 				table.insert(load_installed_calls, true)
@@ -46,7 +45,6 @@ describe("catalog", function()
 
 	after_each(function()
 		for _, module in ipairs({
-			"catalog.provider.mason",
 			"catalog.provider",
 			"catalog.scripts.ensure_installed",
 			"catalog.lsp",
@@ -57,11 +55,12 @@ describe("catalog", function()
 		end
 	end)
 
-	it("registers mason and expands boolean auto_install by default", function()
+	it("expands boolean auto_install by default without touching providers", function()
 		catalog.setup({})
 
 		assert.equals(1, #log_calls)
 		assert.equals(0, #lsp_calls)
+		assert.equals(nil, package.loaded["catalog.provider.mason"]) -- registration stays with the user
 		assert.are_same({ lsp = true, formatter = true, linter = true }, auto_install_calls[1])
 	end)
 
