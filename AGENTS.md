@@ -70,6 +70,7 @@ Before making any changes:
 git checkout main
 git pull upstream main
 git checkout -b feat/short-description
+make hooks  # activate versioned git hooks (pre-commit + commit-msg)
 ```
 
 ### Step 3: Make Changes
