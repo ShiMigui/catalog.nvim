@@ -19,7 +19,7 @@ make test
 make test-verbose
 
 # Run a specific test file
-make test-file FILE=tests/init_spec.lua
+make test-file FILE=tests/provider_spec.lua
 ```
 
 ### Using Neovim directly
@@ -29,20 +29,20 @@ make test-file FILE=tests/init_spec.lua
 nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedDirectory tests/"
 
 # Run a specific test file
-nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedFile tests/init_spec.lua"
+nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedFile tests/provider_spec.lua"
 ```
 
 ## Test Files
 
-- `init_spec.lua` - Tests for catalog.setup() validation
-- `provider_spec.lua` - Tests for provider resolution and caching
-- `log_spec.lua` - Tests for logging system
-- `auto_install_spec.lua` - Tests for auto_install functionality
-- `auto_install_tools_spec.lua` - Tests for filetype-to-tools mapping
-- `lsp_config_spec.lua` - Tests for LSP configuration
-- `lsp_spec.lua` - Tests for LSP setup
-- `ensure_installed_spec.lua` - Tests for ensure_installed
-- `meta_spec.lua` - Tests for type definitions
+- `minimal_init.lua` - Headless test bootstrap (runtime path setup)
+- `catalog_spec.lua` - Tests for `setup()` wiring and option coercion
+- `log_spec.lua` - Tests for the scoped logging system
+- `provider_spec.lua` - Tests for the provider registry, provide/try_provide and caching
+- `mason_spec.lua` - Tests for the built-in Mason provider conversion
+- `scripts_spec.lua` - Tests for ensure_installed / ensure_list_of helpers
+- `lsp_spec.lua` - Tests for the LSP setup flow
+- `lsp_config_spec.lua` - Tests for the catalog.lsp handle (update/enable/is_enabled)
+- `auto_install_spec.lua` - Tests for auto-install FileType hooks
 
 ## Adding New Tests
 

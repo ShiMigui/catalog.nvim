@@ -1,78 +1,70 @@
----@alias catalog.CapabilityProvider
----| "blink.cmp"
----| "nvim-cmp"
+local log = require("catalog.log").new("lsp.config")
+---Implementation of the [catalog.lsp](lua://catalog.lsp) contract.
+---
+---```lua
+---local lsp = require("catalog.lsp.config").new("lua_ls")
+---lsp:update({ capabilities = caps }):update({ settings = { Lua = {} } })
+---```
 
----@class catalog.LspDefaultConfig
----@field config? catalog.LspConfig
----@field capabilities? catalog.CapabilityProvider
----@field on_attach? fun(client: vim.lsp.Client, bufnr: integer): nil
+---Base configuration every instance deep-copies from, so instances never
+---share mutable state. TODO: seed this from `catalog.lsp.default_config`
+---once the two modules share a single source of truth.
+local default = {}
 
-local log = require("catalog.log").log(...)
+---@class catalog.lsp
+---@field name string Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
+---@field config vim.lsp.Config Configuration merged so far; starts empty.
+---Deep-merges `cfg` into [config](lua://catalog.lsp.config) (new values win)
+---and returns the same instance, so calls can be chained.
+---@field update fun(self: catalog.lsp, cfg: vim.lsp.Config): catalog.lsp
+---Registers the merged config and enables the server (no-op when already enabled).
+---@field enable fun(self: catalog.lsp)
+---Whether the editor currently has this server enabled.
+---@field is_enabled fun(self: catalog.lsp): boolean
 
----@type catalog.LspConfig
-local lsp_default_config = { capabilities = vim.lsp.protocol.make_client_capabilities() }
+---Method table used as `__index` for every [catalog.lsp](lua://catalog.lsp) instance.
+local lsp = {}
 
----@type fun(client: vim.lsp.Client, bufnr: integer): nil|nil
-local on_attach = nil
-
----@type table<string, fun(): table>
-local capability_providers = {
-	["blink.cmp"] = function()
-		return require("blink.cmp").get_lsp_capabilities()
-	end,
-	["nvim-cmp"] = function()
-		return require("cmp_nvim_lsp").default_capabilities()
-	end,
-}
-
----@param provider string
----@return nil
-local function apply_provider_capabilities(provider)
-	log.dbg("Loading capabilities from '%s'", provider)
-	local loader = capability_providers[provider]
-	if not loader then
-		log.err("Unknown capability provider: %s", provider)
-		return
-	end
-
-	local ok, capabilities = pcall(loader)
-	if not ok then
-		log.err("Failed to load capability provider '%s': %s", provider, capabilities)
-		return
-	end
-
-	log.dbg("Capabilities loaded from '%s'", provider)
-	lsp_default_config.capabilities = vim.tbl_deep_extend("force", lsp_default_config.capabilities, capabilities)
+---Deep-merges `cfg` into the current configuration.
+---New values overwrite existing values (`vim.tbl_deep_extend("force")`).
+---@param self catalog.lsp
+---@param cfg vim.lsp.Config Configuration fragment to merge in.
+---@return catalog.lsp self The same instance, for chaining.
+function lsp.update(self, cfg)
+	log:dbg("Updating '%s' lsp configuration", self.name)
+	self.config = vim.tbl_deep_extend("force", self.config, cfg)
+	return self
 end
 
----@type catalog.Integration
-return {
-	---@param opts? catalog.LspDefaultConfig
-	setup = function(opts)
-		if not opts then
-			return
-		end
+---Registers the merged config with nvim-lspconfig and enables the server,
+---unless it is already enabled. Must run AFTER all update() calls: this is
+---the moment the configuration is handed to the editor.
+---@param self catalog.lsp
+function lsp.enable(self)
+	log:dbg("Enabling '%s' lsp", self.name)
+	if not vim.lsp.is_enabled(self.name) then
+		vim.lsp.config(self.name, self.config)
+		vim.lsp.enable(self.name)
+		log:dbg("'%s' enabled", self.name)
+	end
+end
 
-		if type(opts.capabilities) == "string" then
-			apply_provider_capabilities(opts.capabilities)
-		end
+---Checks with the editor whether this server is currently enabled, letting
+---consumers skip reconfiguration without duplicating the check.
+---@param self catalog.lsp
+---@return boolean
+function lsp.is_enabled(self)
+	return vim.lsp.is_enabled(self.name)
+end
 
-		if type(opts.config) == "table" then
-			lsp_default_config = vim.tbl_deep_extend("force", lsp_default_config, opts.config)
-		end
+local meta = { __index = lsp }
 
-		if type(opts.on_attach) == "function" then
-			on_attach = opts.on_attach
-		end
-	end,
+---Creates an instance bound to server `name`, starting from an empty
+---configuration that can be extended through chained update() calls.
+---@param name string Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
+---@return catalog.lsp
+local function new(name)
+	return setmetatable({ name = name, config = vim.deepcopy(default) }, meta)
+end
 
-	---@return catalog.LspConfig
-	config = function()
-		return lsp_default_config
-	end,
-
-	---@return fun(client: vim.lsp.Client, bufnr: integer): nil|nil
-	get_on_attach = function()
-		return on_attach
-	end,
-}
+return { new = new }

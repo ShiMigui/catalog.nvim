@@ -1,90 +1,94 @@
-local assert = require("luassert")
-
 describe("catalog.lsp", function()
-	local lsp
+	local lsp, provider
+	local original_notify
+	local notified ---@type {msg: string, level: vim.log.levels}[]
+
+	---Registers a fake provider for `names`, returning Pkg fakes that record
+	---install/update/enable calls.
+	---@param names table<string, boolean>
+	local function register_pkg_provider(names)
+		local recorded = { installed = {}, updated = {}, enabled = {} }
+		provider.append({
+			name = "fake",
+			provide = function(name)
+				if not names[name] then
+					return nil
+				end
+				return {
+					name = name,
+					provider_name = "fake",
+					lsp = {
+						update = function(_, cfg)
+							recorded.updated[name] = cfg
+						end,
+						enable = function()
+							recorded.enabled[name] = true
+						end,
+					},
+					installed = function()
+						return false
+					end,
+					install = function()
+						recorded.installed[name] = true
+					end,
+				}
+			end,
+			load_installed = function()
+				return {}
+			end,
+		})
+		return recorded
+	end
 
 	before_each(function()
-		package.loaded["catalog.lsp"] = nil
-		package.loaded["catalog.lsp.config"] = nil
+		for _, module in ipairs({ "catalog.provider", "catalog.scripts.ensure_installed", "catalog.lsp" }) do
+			package.loaded[module] = nil
+		end
+
+		original_notify = vim.notify
+		notified = {}
+		vim.notify = function(msg, level)
+			table.insert(notified, { msg = msg, level = level })
+		end
+
+		provider = require("catalog.provider")
 		lsp = require("catalog.lsp")
 	end)
 
-	describe("setup", function()
-		it("accepts empty table", function()
-			assert.has_no.errors(function()
-				lsp.setup({})
-			end)
-		end)
+	after_each(function()
+		vim.notify = original_notify
+	end)
 
-		it("rejects non-table input", function()
-			assert.has_no.errors(function()
-				lsp.setup("invalid")
-			end)
-		end)
+	it("merges user defaults over the internal default config", function()
+		local capabilities = lsp.default_config.capabilities
+		lsp.setup({ default = { flags = { debounce_text_changes = 999 } } })
 
-		it("handles array-style LSP declarations", function()
-			-- Skip if mason is not available (needed for provider)
-			local ok, _ = pcall(require, "mason-registry")
-			if not ok then
-				return -- skip
-			end
+		assert.equals(999, lsp.default_config.flags.debounce_text_changes)
+		assert.equals(capabilities, lsp.default_config.capabilities)
+	end)
 
-			-- This will try to resolve packages, which may fail
-			-- but should not error in the setup itself
-			assert.has_no.errors(function()
-				lsp.setup({
-					"lua-language-server",
-				})
-			end)
-		end)
+	it("installs, updates and enables every configured server", function()
+		local recorded = register_pkg_provider({ lua_ls = true })
+		lsp.setup({ config_by = { lua_ls = { settings = { Lua = { v = "5.4" } } } } })
 
-		it("handles keyed LSP declarations", function()
-			-- Skip if mason is not available (needed for provider)
-			local ok, _ = pcall(require, "mason-registry")
-			if not ok then
-				return -- skip
-			end
+		assert.equals(true, recorded.installed.lua_ls)
+		assert.equals("5.4", recorded.updated.lua_ls.settings.Lua.v)
+		assert.equals(true, recorded.enabled.lua_ls)
+	end)
 
-			assert.has_no.errors(function()
-				lsp.setup({
-					["lua-language-server"] = {
-						settings = {
-							Lua = {
-								diagnostics = {
-									globals = { "vim" },
-								},
-							},
-						},
-					},
-				})
-			end)
-		end)
+	it("ignores configured servers that no provider can provide", function()
+		local recorded = register_pkg_provider({})
+		lsp.setup({ config_by = { ghost = {} } })
 
-		it("handles mixed declarations", function()
-			-- Skip if mason is not available (needed for provider)
-			local ok, _ = pcall(require, "mason-registry")
-			if not ok then
-				return -- skip
-			end
+		assert.is_nil(next(recorded.enabled))
+		assert.equals(vim.log.levels.ERROR, notified[1].level)
+	end)
 
-			assert.has_no.errors(function()
-				lsp.setup({
-					"lua-language-server",
-					["yaml-language-server"] = {
-						settings = {
-							yaml = {
-								schemas = {},
-							},
-						},
-					},
-				})
-			end)
-		end)
+	it("logs an error and stops when config_by is not a table", function()
+		local recorded = register_pkg_provider({ lua_ls = true })
+		lsp.setup({ config_by = "oops" })
 
-		it("creates user command CatalogShowLSPs", function()
-			lsp.setup({})
-			local commands = vim.api.nvim_get_commands({})
-			assert.is_not_nil(commands.CatalogShowLSPs)
-		end)
+		assert.equals(vim.log.levels.ERROR, notified[1].level)
+		assert.is_nil(next(recorded.enabled))
 	end)
 end)

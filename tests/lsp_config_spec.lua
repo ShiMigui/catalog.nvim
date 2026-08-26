@@ -1,91 +1,70 @@
-local assert = require("luassert")
-
 describe("catalog.lsp.config", function()
-	local lsp_config
+	local original_lsp_api = {
+		is_enabled = vim.lsp.is_enabled,
+		config = vim.lsp.config,
+		enable = vim.lsp.enable,
+	}
+	local state ---@type {enabled: table<string, boolean>, configured: table<string, vim.lsp.Config>}
 
 	before_each(function()
-		package.loaded["catalog.lsp.config"] = nil
-		lsp_config = require("catalog.lsp.config")
+		state = { enabled = {}, configured = {} }
+		vim.lsp.is_enabled = function(name)
+			return state.enabled[name] == true
+		end
+		vim.lsp.config = function(name, cfg)
+			state.configured[name] = cfg
+		end
+		vim.lsp.enable = function(name)
+			state.enabled[name] = true
+		end
 	end)
 
-	describe("config", function()
-		it("returns a table", function()
-			local config = lsp_config.config()
-			assert.is_table(config)
-		end)
-
-		it("has capabilities", function()
-			local config = lsp_config.config()
-			assert.is_not_nil(config.capabilities)
-		end)
-
-		it("has default capabilities from vim.lsp.protocol", function()
-			local config = lsp_config.config()
-			assert.is_table(config.capabilities)
-		end)
+	after_each(function()
+		for fn, original in pairs(original_lsp_api) do
+			vim.lsp[fn] = original
+		end
 	end)
 
-	describe("setup", function()
-		it("accepts nil opts", function()
-			assert.has_no.errors(function()
-				lsp_config.setup(nil)
-			end)
-		end)
+	local function new(name)
+		return require("catalog.lsp.config").new(name)
+	end
 
-		it("accepts empty opts", function()
-			assert.has_no.errors(function()
-				lsp_config.setup({})
-			end)
-		end)
-
-		it("merges custom config", function()
-			lsp_config.setup({
-				config = {
-					custom_option = true,
-				},
-			})
-
-			local config = lsp_config.config()
-			assert.is_true(config.custom_option)
-		end)
-
-		it("deep merges custom config", function()
-			lsp_config.setup({
-				config = {
-					settings = {
-						Lua = {
-							diagnostics = {
-								globals = { "vim" },
-							},
-						},
-					},
-				},
-			})
-
-			local config = lsp_config.config()
-			assert.is_table(config.settings)
-			assert.is_table(config.settings.Lua)
-			assert.is_table(config.settings.Lua.diagnostics)
-			assert.is_table(config.settings.Lua.diagnostics.globals)
-		end)
+	it("binds an empty configuration to the server name", function()
+		local l = new("lua_ls")
+		assert.equals("lua_ls", l.name)
+		assert.are_same({}, l.config)
 	end)
 
-	describe("get_on_attach", function()
-		it("returns nil by default", function()
-			local on_attach = lsp_config.get_on_attach()
-			assert.is_nil(on_attach)
-		end)
+	it("update deep-merges configurations and chains", function()
+		local l = new("lua_ls")
+		local ret = l:update({ a = { b = 1 } }):update({ a = { c = 2 } })
 
-		it("returns function when set", function()
-			local function custom_on_attach() end
+		assert.equals(l, ret)
+		assert.equals(1, l.config.a.b)
+		assert.equals(2, l.config.a.c)
+	end)
 
-			lsp_config.setup({
-				on_attach = custom_on_attach,
-			})
+	it("enable registers the merged config and enables the server", function()
+		local l = new("lua_ls")
+		l:update({ settings = { Lua = { v = "5.4" } } })
+		l:enable()
 
-			local on_attach = lsp_config.get_on_attach()
-			assert.is_function(on_attach)
-			assert.are.equal(custom_on_attach, on_attach)
-		end)
+		assert.equals(l.config, state.configured.lua_ls)
+		assert.is_true(state.enabled.lua_ls)
+	end)
+
+	it("enable skips servers that are already enabled", function()
+		state.enabled.lua_ls = true
+		new("lua_ls"):enable()
+
+		assert.are_same({}, state.configured)
+	end)
+
+	it("is_enabled mirrors the editor state for the bound server", function()
+		local l = new("lua_ls")
+
+		assert.is_false(l:is_enabled())
+		state.enabled.lua_ls = true
+		assert.is_true(l:is_enabled())
 	end)
 end)

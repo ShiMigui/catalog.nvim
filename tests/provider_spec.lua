@@ -1,112 +1,93 @@
-local assert = require("luassert")
-
 describe("catalog.provider", function()
 	local provider
 
 	before_each(function()
-		-- Reload the module to get fresh state
 		package.loaded["catalog.provider"] = nil
-		package.loaded["catalog.provider.mason"] = nil
 		provider = require("catalog.provider")
 	end)
 
-	describe("resolve", function()
-		it("returns nil for unknown package", function()
-			local result = provider.resolve("nonexistent-package-12345")
-			assert.is_nil(result)
-		end)
+	---Registers a fake provider providing the names in `known`, counting
+	---invocations per name.
+	---@param known table<string, boolean>
+	---@return table<string, number> calls
+	local function register_fake(known)
+		local calls = {}
+		provider.append({
+			name = "fake",
+			provide = function(name)
+				calls[name] = (calls[name] or 0) + 1
+				if known[name] then
+					return { name = name, provider_name = "fake" }
+				end
+				return nil
+			end,
+			load_installed = function()
+				return {}
+			end,
+		})
+		return calls
+	end
 
-		it("returns package object for valid package", function()
-			-- This test requires mason to be available
-			-- Skip if mason is not installed
-			local ok, _ = pcall(require, "mason-registry")
-			if not ok then
-				return -- skip
-			end
-
-			local result = provider.resolve("lua-language-server")
-			if result then
-				assert.is_table(result)
-				assert.is_string(result.name)
-				assert.is_function(result.installed)
-				assert.is_function(result.install)
-			end
-		end)
+	it("appends providers and provides packages through them", function()
+		register_fake({ known = true })
+		local pkg = provider.provide("known")
+		assert.equals("known", pkg.name)
+		assert.equals("fake", pkg.provider_name)
 	end)
 
-	describe("set_providers", function()
-		it("can set custom providers", function()
-			local custom_provider = {
-				resolve = function(name)
-					return {
-						name = name,
-						installed = function()
-							return false
-						end,
-						install = function() end,
-					}
-				end,
-			}
-
-			provider.set_providers({ custom_provider })
-			local result = provider.resolve("custom-package")
-			assert.is_table(result)
-			assert.are.equal("custom-package", result.name)
-		end)
+	it("caches hits so the provider runs once per package", function()
+		local calls = register_fake({ known = true })
+		provider.provide("known")
+		provider.provide("known")
+		assert.equals(1, calls.known)
 	end)
 
-	describe("clear_cache", function()
-		it("clears the cache", function()
-			-- First call should resolve and cache
-			provider.resolve("nonexistent-12345")
-			-- Clear cache
-			provider.clear_cache()
-			-- Next call should try to resolve again
-			local result = provider.resolve("nonexistent-12345")
-			assert.is_nil(result)
-		end)
+	it("returns nil for unknown packages and notifies an error", function()
+		local original_notify = vim.notify
+		local notified = {}
+		vim.notify = function(msg, level)
+			table.insert(notified, { msg = msg, level = level })
+		end
+
+		register_fake({})
+		assert.is_nil(provider.provide("ghost"))
+		assert.equals(vim.log.levels.ERROR, notified[1].level)
+
+		vim.notify = original_notify
 	end)
 
-	describe("cache", function()
-		it("caches resolved packages", function()
-			local custom_provider = {
-				resolve = function(name)
-					return {
-						name = name,
-						installed = function()
-							return false
-						end,
-						install = function() end,
-					}
-				end,
-			}
+	it("try_provide caches misses as false without notifying", function()
+		local original_notify = vim.notify
+		local notified = {}
+		vim.notify = function(msg, level)
+			table.insert(notified, { msg = msg, level = level })
+		end
 
-			provider.set_providers({ custom_provider })
+		local calls = register_fake({})
+		assert.is_false(provider.try_provide("ghost"))
+		assert.is_false(provider.try_provide("ghost"))
+		assert.equals(1, calls.ghost)
+		assert.equals(0, #notified)
 
-			-- First call
-			local result1 = provider.resolve("cached-package")
-			-- Second call should return cached result
-			local result2 = provider.resolve("cached-package")
+		vim.notify = original_notify
+	end)
 
-			assert.are.equal(result1, result2)
-		end)
+	it("load_installed seeds the cache so packages are provided without lookups", function()
+		local pkg = { name = "cached", provider_name = "fake" }
+		local looked_up = false
+		provider.append({
+			name = "fake",
+			provide = function()
+				looked_up = true
+				return nil
+			end,
+			load_installed = function()
+				return { cached = pkg }
+			end,
+		})
 
-		it("caches failed resolutions", function()
-			local custom_provider = {
-				resolve = function(name)
-					return nil
-				end,
-			}
-
-			provider.set_providers({ custom_provider })
-
-			-- First call should fail
-			local result1 = provider.resolve("failed-package")
-			assert.is_nil(result1)
-
-			-- Second call should also fail (cached)
-			local result2 = provider.resolve("failed-package")
-			assert.is_nil(result2)
-		end)
+		provider.load_installed()
+		assert.equals(pkg, provider.try_provide("cached"))
+		assert.is_false(looked_up)
 	end)
 end)

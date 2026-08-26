@@ -46,6 +46,15 @@ Before making any changes:
 - Do not add unnecessary features
 - Keep changes focused and minimal
 
+### 5. DX-First, Concise Code
+
+**All generated code must prioritize Developer Experience (DX) and be as concise as possible.**
+
+- Design APIs that are intuitive, predictable, and pleasant to use
+- Prefer clear names and sensible defaults over configuration
+- Write the shortest correct implementation; no boilerplate or dead code
+- Conciseness must never sacrifice readability or correctness
+
 ## Development Workflow
 
 ### Step 1: Understand the Task
@@ -149,24 +158,22 @@ Create PR with proper description and link to issue.
 ## File Structure Reference
 
 ```
-lua/catalog/
-├── init.lua              -- Main entry, setup validation
-├── log.lua              -- Logging system
-├── provider/
-│   ├── init.lua         -- Provider management, cache
-│   ├── meta.lua         -- Type definitions
-│   ├── mason.lua        -- Mason provider
-│   └── lsp.lua          -- LSP helper
-├── lsp/
-│   ├── init.lua         -- LSP integration
-│   └── config.lua       -- LSP configuration
-├── conform.lua          -- Conform integration
-├── lint.lua             -- Lint integration
-├── treesitter.lua       -- Treesitter integration
-├── ensure_installed.lua -- Package installation
-├── auto_update.lua      -- Auto update
-├── auto_install.lua     -- Auto install
-└── auto_install_tools.lua -- Filetype mapping
+lua/
+├── catalog.lua                    -- Entry point: setup() and option normalization
+└── catalog/
+    ├── log.lua                    -- Scoped logging system
+    ├── lsp/
+    │   ├── init.lua               -- LSP integration setup
+    │   └── config.lua             -- catalog.lsp handle (update/enable/is_enabled)
+    ├── provider/
+    │   ├── init.lua               -- Provider registry and session cache
+    │   └── mason.lua              -- Built-in Mason provider
+    ├── scripts/
+    │   ├── ensure_installed.lua   -- Provide + install packages by name
+    │   └── ensure_list_of.lua     -- Option list normalizer
+    └── auto_install/
+        ├── init.lua               -- FileType autocmd install hooks
+        └── table.lua              -- Filetype -> tools mapping
 ```
 
 ## Testing Reference
@@ -175,15 +182,15 @@ lua/catalog/
 
 ```
 tests/
-├── init_spec.lua
-├── provider_spec.lua
-├── log_spec.lua
-├── auto_install_spec.lua
-├── auto_install_tools_spec.lua
-├── lsp_config_spec.lua
-├── lsp_spec.lua
-├── ensure_installed_spec.lua
-└── meta_spec.lua
+├── minimal_init.lua        -- Headless test bootstrap
+├── catalog_spec.lua        -- setup() wiring and option coercion
+├── log_spec.lua            -- Logging system
+├── provider_spec.lua       -- Registry, cache, provide/try_provide
+├── mason_spec.lua          -- Mason provider conversion
+├── scripts_spec.lua        -- ensure_installed / ensure_list_of
+├── lsp_spec.lua            -- LSP setup flow
+├── lsp_config_spec.lua     -- catalog.lsp handle behavior
+└── auto_install_spec.lua   -- Auto-install hooks
 ```
 
 ### Running Tests
@@ -249,6 +256,7 @@ AI agents must:
 - ✅ Use conventional commits
 - ✅ Make minimal changes
 - ✅ Read before writing
+- ✅ Write DX-first, concise code
 - ❌ Modify tests (unless asked)
 - ❌ Commit to main
 - ❌ Skip testing
