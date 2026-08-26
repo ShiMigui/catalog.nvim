@@ -59,6 +59,9 @@ local pkg_cache = {}
 ---@return catalog.package|false|nil
 local function try_provide(name)
 	if pkg_cache[name] ~= nil then
+		if pkg_cache[name] then
+			log:dbg("Package '%s' in cache, returning...", name)
+		end
 		return pkg_cache[name]
 	end
 
