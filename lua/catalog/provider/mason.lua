@@ -22,6 +22,7 @@ local function convert(pkg)
 
 	return {
 		name = pkg.name,
+		provider_name = "mason",
 		lsp = nvim.lspconfig and lsp_config.new(nvim.lspconfig) or nil,
 		installed = function()
 			return pkg:is_installed()
