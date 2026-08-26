@@ -59,4 +59,12 @@ describe("catalog.lsp.config", function()
 
 		assert.are_same({}, state.configured)
 	end)
+
+	it("is_enabled mirrors the editor state for the bound server", function()
+		local l = new("lua_ls")
+
+		assert.is_false(l:is_enabled())
+		state.enabled.lua_ls = true
+		assert.is_true(l:is_enabled())
+	end)
 end)
