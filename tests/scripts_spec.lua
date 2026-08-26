@@ -36,20 +36,26 @@ describe("catalog.scripts", function()
 			provider = require("catalog.provider")
 		end)
 
-		it("resolves, installs and returns requested packages once", function()
+		it("provides, installs and returns requested packages once", function()
 			local installs = {}
-			provider.append("fake", function(name)
-				return {
-					name = name,
-					provider_name = "fake",
-					installed = function()
-						return false
-					end,
-					install = function(self)
-						installs[self.name] = (installs[self.name] or 0) + 1
-					end,
-				}
-			end)
+			provider.append({
+				name = "fake",
+				provide = function(name)
+					return {
+						name = name,
+						provider_name = "fake",
+						installed = function()
+							return false
+						end,
+						install = function(self)
+							installs[self.name] = (installs[self.name] or 0) + 1
+						end,
+					}
+				end,
+				load_installed = function()
+					return {}
+				end,
+			})
 
 			local ensure_installed = require("catalog.scripts.ensure_installed")
 			local map = ensure_installed({ "tool" })
@@ -61,10 +67,16 @@ describe("catalog.scripts", function()
 			assert.equals(1, installs.tool)
 		end)
 
-		it("omits packages that cannot be resolved", function()
-			provider.append("fake", function()
-				return nil
-			end)
+		it("omits packages that cannot be provided", function()
+			provider.append({
+				name = "fake",
+				provide = function()
+					return nil
+				end,
+				load_installed = function()
+					return {}
+				end,
+			})
 
 			local ensure_installed = require("catalog.scripts.ensure_installed")
 			assert.are_same({}, ensure_installed({ "ghost" }))

@@ -1,7 +1,7 @@
 ---Auto-install hooks.
 ---
 ---Registers a single FileType autocommand that, on the first time a filetype
----is opened, resolves every tool mapped for it in
+---is opened, provides every tool mapped for it in
 ---[table](lua://catalog.auto_install.table) through the provider registry and
 ---installs it — LSP servers additionally get the default config applied and
 ---are enabled right away.
@@ -19,17 +19,17 @@ local ensure_list_of = require("catalog.scripts.ensure_list_of")
 ---@type table<string, boolean>
 local seen_ft = {}
 
----Builds an installer for one tool kind: quietly resolves the package by name
+---Builds an installer for one tool kind: quietly provides the package by name
 ---and hands it to `handle` when a provider knows it.
 ---@param kind catalog.tool_kind Tool category, used for log context.
----@param handle fun(pkg: catalog.package) Runs when the package resolves.
+---@param handle fun(pkg: catalog.package) Runs when the package is provided.
 ---@return fun(name: string)
 local function installer(kind, handle)
 	return function(name)
 		log:dbg("Trying to auto-install %s '%s'", kind, name)
-		local pkg = provider.try_resolve(name)
+		local pkg = provider.try_provide(name)
 		if not pkg then
-			log:dbg("No provider resolved '%s'", name)
+			log:dbg("Package '%s' not provided by any source", name)
 			return
 		end
 		handle(pkg)

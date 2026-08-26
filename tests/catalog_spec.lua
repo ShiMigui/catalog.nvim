@@ -1,13 +1,25 @@
 describe("catalog", function()
 	local catalog
 	local lsp_calls, auto_install_calls, log_calls ---@type table[]
+	local load_installed_calls, ensure_installed_calls ---@type number[]
 
 	before_each(function()
 		lsp_calls = {}
 		auto_install_calls = {}
 		log_calls = {}
+		load_installed_calls = {}
+		ensure_installed_calls = {}
 
+		local logger = { dbg = function() end, header = function() end }
 		package.loaded["catalog.provider.mason"] = {}
+		package.loaded["catalog.provider"] = {
+			load_installed = function()
+				table.insert(load_installed_calls, true)
+			end,
+		}
+		package.loaded["catalog.scripts.ensure_installed"] = function(list)
+			table.insert(ensure_installed_calls, list)
+		end
 		package.loaded["catalog.lsp"] = {
 			setup = function(opts)
 				table.insert(lsp_calls, opts)
@@ -21,11 +33,10 @@ describe("catalog", function()
 		package.loaded["catalog.log"] = {
 			setup = function(debug, silent)
 				table.insert(log_calls, { debug = debug, silent = silent })
-				return {
-					new = function()
-						return { dbg = function() end }
-					end,
-				}
+				return package.loaded["catalog.log"]
+			end,
+			new = function()
+				return logger
 			end,
 		}
 
@@ -34,7 +45,14 @@ describe("catalog", function()
 	end)
 
 	after_each(function()
-		for _, module in ipairs({ "catalog.provider.mason", "catalog.lsp", "catalog.auto_install", "catalog.log" }) do
+		for _, module in ipairs({
+			"catalog.provider.mason",
+			"catalog.provider",
+			"catalog.scripts.ensure_installed",
+			"catalog.lsp",
+			"catalog.auto_install",
+			"catalog.log",
+		}) do
 			package.loaded[module] = nil
 		end
 	end)
@@ -72,5 +90,17 @@ describe("catalog", function()
 		catalog.setup({ debug = true })
 
 		assert.same({ debug = true, silent = false }, log_calls[1])
+	end)
+
+	it("seeds the provider cache once per setup", function()
+		catalog.setup({ auto_install = false })
+
+		assert.equals(1, #load_installed_calls)
+	end)
+
+	it("forwards the ensure_installed list to the installer script", function()
+		catalog.setup({ auto_install = false, ensure_installed = { "stylua" } })
+
+		assert.are_same({ "stylua" }, ensure_installed_calls[1])
 	end)
 end)

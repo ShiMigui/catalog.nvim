@@ -27,37 +27,46 @@ describe("catalog.auto_install", function()
 		vim.notify = original_notify
 	end)
 
-	---Registers a fake provider resolving `tools`; values are `"lsp"` (package
+	---Registers a fake provider providing `tools`; values are `"lsp"` (package
 	---carries an lsp handle) or `"tool"`. Counters record every side effect.
 	---@param tools table<string, "lsp"|"tool">
 	local function register_tools(tools)
 		local state = { installs = {}, updates = {}, enables = {} }
-		provider.append("fake", function(name)
-			if not tools[name] then
-				return nil
-			end
-			local pkg = {
-				name = name,
-				provider_name = "fake",
-				installed = function()
-					return false
-				end,
-				install = function()
-					state.installs[name] = (state.installs[name] or 0) + 1
-				end,
-			}
-			if tools[name] == "lsp" then
-				pkg.lsp = {
-					update = function(_, cfg)
-						state.updates[name] = cfg
+		provider.append({
+			name = "fake",
+			provide = function(name)
+				if not tools[name] then
+					return nil
+				end
+				local pkg = {
+					name = name,
+					provider_name = "fake",
+					installed = function()
+						return false
 					end,
-					enable = function()
-						state.enables[name] = (state.enables[name] or 0) + 1
+					install = function()
+						state.installs[name] = (state.installs[name] or 0) + 1
 					end,
 				}
-			end
-			return pkg
-		end)
+				if tools[name] == "lsp" then
+					pkg.lsp = {
+						is_enabled = function()
+							return false
+						end,
+						update = function(_, cfg)
+							state.updates[name] = cfg
+						end,
+						enable = function()
+							state.enables[name] = (state.enables[name] or 0) + 1
+						end,
+					}
+				end
+				return pkg
+			end,
+			load_installed = function()
+				return {}
+			end,
+		})
 		return state
 	end
 
@@ -89,7 +98,6 @@ describe("catalog.auto_install", function()
 		assert.equals(lsp.default_config, state.updates["lua-language-server"])
 		assert.equals(1, state.enables["lua-language-server"])
 		assert.is_nil(state.installs.luacheck)
-		assert.not_nil(lsp.configured_lsps["lua-language-server"])
 	end)
 
 	it("expands list entries into one install per package", function()
@@ -124,11 +132,11 @@ describe("catalog.auto_install", function()
 	end)
 
 	it("skips packages without an lspconfig mapping instead of crashing", function()
-		register_tools({ marksman = "tool" }) -- resolved by the lsp kind, but has no .lsp handle
+		local state = register_tools({ marksman = "tool" }) -- provided to the lsp kind, but has no .lsp handle
 		require("catalog.auto_install").setup({ lsp = true })
 		trigger_ft("markdown")
 
 		assert.equals(vim.log.levels.WARN, notified[1].level)
-		assert.is_nil(next(lsp.configured_lsps))
+		assert.equals(nil, next(state.enables))
 	end)
 end)

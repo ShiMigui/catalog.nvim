@@ -38,11 +38,17 @@ local function convert(pkg)
 	}
 end
 
+---Registers the mason provider. Unknown names make `mason-registry` itself
+---raise, so consumers should only ask for names they trust (or guard it).
 require("catalog.provider").append({
 	name = "mason",
-	resolve = function(name)
+	---@param name string
+	---@return catalog.package?
+	provide = function(name)
 		return convert(mason_registry.get_package(name))
 	end,
+	---Snapshots every package already installed through mason.
+	---@return table<string, catalog.package>
 	load_installed = function()
 		local tbl = {}
 

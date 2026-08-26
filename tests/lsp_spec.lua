@@ -8,29 +8,35 @@ describe("catalog.lsp", function()
 	---@param names table<string, boolean>
 	local function register_pkg_provider(names)
 		local recorded = { installed = {}, updated = {}, enabled = {} }
-		provider.append("fake", function(name)
-			if not names[name] then
-				return nil
-			end
-			return {
-				name = name,
-				provider_name = "fake",
-				lsp = {
-					update = function(_, cfg)
-						recorded.updated[name] = cfg
+		provider.append({
+			name = "fake",
+			provide = function(name)
+				if not names[name] then
+					return nil
+				end
+				return {
+					name = name,
+					provider_name = "fake",
+					lsp = {
+						update = function(_, cfg)
+							recorded.updated[name] = cfg
+						end,
+						enable = function()
+							recorded.enabled[name] = true
+						end,
+					},
+					installed = function()
+						return false
 					end,
-					enable = function()
-						recorded.enabled[name] = true
+					install = function()
+						recorded.installed[name] = true
 					end,
-				},
-				installed = function()
-					return false
-				end,
-				install = function()
-					recorded.installed[name] = true
-				end,
-			}
-		end)
+				}
+			end,
+			load_installed = function()
+				return {}
+			end,
+		})
 		return recorded
 	end
 
@@ -68,21 +74,21 @@ describe("catalog.lsp", function()
 		assert.equals(true, recorded.installed.lua_ls)
 		assert.equals("5.4", recorded.updated.lua_ls.settings.Lua.v)
 		assert.equals(true, recorded.enabled.lua_ls)
-		assert.not_nil(lsp.configured_lsps.lua_ls)
 	end)
 
-	it("ignores configured servers that no provider can resolve", function()
-		register_pkg_provider({})
+	it("ignores configured servers that no provider can provide", function()
+		local recorded = register_pkg_provider({})
 		lsp.setup({ config_by = { ghost = {} } })
 
-		assert.is_nil(next(lsp.configured_lsps))
+		assert.is_nil(next(recorded.enabled))
+		assert.equals(vim.log.levels.ERROR, notified[1].level)
 	end)
 
 	it("logs an error and stops when config_by is not a table", function()
-		register_pkg_provider({ lua_ls = true })
+		local recorded = register_pkg_provider({ lua_ls = true })
 		lsp.setup({ config_by = "oops" })
 
 		assert.equals(vim.log.levels.ERROR, notified[1].level)
-		assert.is_nil(next(lsp.configured_lsps))
+		assert.is_nil(next(recorded.enabled))
 	end)
 end)
