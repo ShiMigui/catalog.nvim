@@ -11,6 +11,7 @@
 ---   auto_install = true,
 ---})
 ---```
+local log = require("catalog.log").new("setup")
 
 ---A single tool category handled by auto-install.
 ---@alias catalog.tool_kind 'lsp'|'formatter'|'linter'
@@ -83,10 +84,11 @@ end
 local function setup(opts)
 	opts = normalize_opts(opts or {})
 
-	local log = require("catalog.log").setup(opts.debug, opts.silent).new("setup")
+	require("catalog.log").setup(opts.debug, opts.silent)
 	log:dbg("Starting catalog plugin setup")
 
-	require("catalog.provider.mason") -- Registers the mason provider
+	-- Registers the built-in mason provider before any consumer asks for packages
+	require("catalog.provider.mason")
 	require("catalog.provider").load_installed()
 
 	if opts.ensure_installed then
