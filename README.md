@@ -339,24 +339,26 @@ auto_update = true
 
 ### Provider Interface
 
-A provider is responsible for resolving packages. Custom providers can be registered.
+A provider is responsible for providing packages from a package manager. Custom providers can be registered.
 
 ```lua
----@class catalog.Provider
----@field resolve fun(name: string): catalog.Package?
+---@class catalog.provider
+---@field name string
+---@field provide fun(name: string): catalog.package?
+---@field load_installed fun(): table<string, catalog.package>
 ```
 
 ### Package Interface
 
-Resolved packages follow this interface:
+Provided packages follow this interface:
 
 ```lua
----@class catalog.Package
+---@class catalog.package
+---@field provider_name string
 ---@field name string
 ---@field installed fun(): boolean
----@field install fun(): nil
----@field update? fun(): nil
----@field lsp? catalog.Lsp
+---@field install fun(self: catalog.package)
+---@field lsp? catalog.lsp
 ```
 
 ### Creating a Custom Provider
@@ -367,8 +369,10 @@ You can create your own provider to support different package managers:
 -- lua/catalog/provider/my_provider.lua
 local M = {}
 
-M.resolve = function(name)
-    -- Check if package exists in your package manager
+M.name = "my-source"
+
+M.provide = function(name)
+    -- Provide the package from your package manager, or nil when unknown
     local pkg = my_package_manager.get(name)
     if not pkg then
         return nil
@@ -376,16 +380,24 @@ M.resolve = function(name)
 
     return {
         name = name,
+        provider_name = M.name,
         installed = function()
             return pkg:is_installed()
         end,
-        install = function()
+        install = function(self)
             pkg:install()
         end,
-        update = function()
-            pkg:update()
-        end,
     }
+end
+
+M.load_installed = function()
+    -- Return every package already installed through your provider,
+    -- keyed by name, so catalog.setup() can seed its cache
+    local pkgs = {}
+    for _, pkg in pairs(my_package_manager.installed()) do
+        pkgs[pkg.name] = { name = pkg.name, provider_name = M.name }
+    end
+    return pkgs
 end
 
 return M
@@ -394,25 +406,19 @@ return M
 ### Registering a Custom Provider
 
 ```lua
--- In your Neovim config
-local catalog = require("catalog")
+-- In your Neovim config, before require("catalog").setup()
 local my_provider = require("catalog.provider.my_provider")
 
--- Get current providers and add yours
-local providers = require("catalog.provider")
-table.insert(providers, my_provider)
+require("catalog.provider").append(my_provider)
 ```
 
 ### Using Multiple Providers
 
-Catalog tries providers in order. The first provider that resolves a package wins:
+Catalog asks every registered provider in registration order. The first provider that provides a package wins, and results are cached per session:
 
 ```lua
--- Example: Try local packages first, then Mason
-local local_provider = require("catalog.provider.local")
-local mason_provider = require("catalog.provider.mason")
-
-providers.set_providers({ local_provider, mason_provider })
+-- Example: register local packages first, then Mason (built-in)
+require("catalog.provider").append(local_provider) -- mason registers itself on setup()
 ```
 
 ## Design Principles
@@ -452,7 +458,7 @@ This project includes guidelines for AI agents in [AGENTS.md](AGENTS.md). All AI
 
 1. Check the package name on [mason-registry](https://github.com/nvim-mason/mason-registry)
 2. Some packages have different names in Mason (e.g., `typescript-language-server` vs `tsserver`)
-3. Enable debug logging to see resolve errors
+3. Enable debug logging to see provide errors
 
 ### Formatter/Linter not installing
 
@@ -469,6 +475,5 @@ This project includes guidelines for AI agents in [AGENTS.md](AGENTS.md). All AI
 
 ### Performance issues
 
-1. Use `silent_errors = true` to reduce notification overhead
-2. The package cache has a 5-minute TTL; restart Neovim to clear it
-3. Call `require("catalog.provider").clear_cache()` to manually clear cache
+1. Use `silent = true` to reduce notification overhead
+2. The package cache lives for the whole Neovim session (seeded from installed packages at `setup()`); restart Neovim to rebuild it
