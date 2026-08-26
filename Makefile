@@ -1,4 +1,4 @@
-.PHONY: test test-verbose test-file clean coverage lint format check
+.PHONY: test test-verbose test-file clean lint format-check format check
 
 # Run all tests
 test:
@@ -17,10 +17,6 @@ clean:
 	rm -rf tests/plenary/
 	find . -name "Session.vim" -delete
 	find . -name ".netrwhist" -delete
-
-# Run tests and generate coverage report
-coverage:
-	nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedDirectory tests/ --coverage" -c "lua require('plenary.coverage').show()"
 
 # Run luacheck linter
 lint:
