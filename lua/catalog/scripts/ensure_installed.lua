@@ -1,12 +1,16 @@
 local provider = require("catalog.provider")
 local log = require("catalog.log").new("ensure_installed")
 
+---Per-name memo of resolved packages; `false` marks names that failed to
+---resolve so they are never re-resolved (nor re-error-notified) on later calls.
+---@type table<string, catalog.package|false>
 local cache = {}
 
 ---Resolves and installs every package in `list`, returning the resolved
----[catalog.Package](lua://catalog.Package) map. Lookups are cached across calls.
----@param list string[]
----@return table<string, catalog.Package>
+---[catalog.package](lua://catalog.package) map keyed by name. Lookups and
+---installs are cached across calls, making this safe to repeat per session.
+---@param list string[] Package names to resolve and install.
+---@return table<string, catalog.package> map Only successfully resolved packages.
 return function(list)
 	log:header()
 	local map = {}

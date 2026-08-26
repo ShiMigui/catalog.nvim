@@ -1,3 +1,12 @@
+---Filetype -> tools mapping consumed by `catalog.auto_install`.
+---
+---Keys are Neovim filetypes; values carry the mason package names per tool
+---kind. Every value accepts either a single name or a list of names, so
+---filetypes with multiple servers (e.g. python) work out of the box.
+---
+---Package names must exist in at least one registered provider (mason).
+
+---@type table<string, table<catalog.tool_kind, string|string[]>>
 return {
 	lua = { lsp = "lua-language-server", formatter = "stylua", linter = "luacheck" },
 	typescript = { lsp = "typescript-language-server", formatter = "prettierd", linter = "eslint-ls" },

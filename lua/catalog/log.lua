@@ -1,7 +1,8 @@
 ---Logging system for catalog.nvim.
 ---
 ---Loggers are scoped: each scope gets a cached logger whose messages are
----prefixed with `[scope] `.
+---prefixed with `[scope] `. All loggers share a single method prototype, so
+---memory cost per scope is one small table, never a copy of the methods.
 ---
 ---```lua
 ---local log = require("catalog.log").new("provider")
@@ -9,37 +10,47 @@
 ---```
 local M = {}
 
+---Levels currently notified; defaults keep ERROR/WARN/INFO on so failures
+---are never silently swallowed before `setup()` runs.
 ---@type table<vim.log.levels, boolean>
 local enabled = {
 	[vim.log.levels.ERROR] = true,
 	[vim.log.levels.WARN] = true,
 	[vim.log.levels.INFO] = true,
 }
+---@type table<string, catalog.logger>
 local cache = {}
 local levels = vim.log.levels
 
 ---Scoped logger; messages are prefixed with `[scope] `.
----@class catalog.Logger
+---@class catalog.logger
+---Rendered `[scope] ` prefix prepended to every notification.
 ---@field prefix string
+---Toggle flipped by [header](lua://catalog.logger.header) on each call.
+---@field started? boolean
 ---Formats `msg` and notifies it when `level` is enabled. The text is always
 ---returned, even when the level is disabled.
----@field message fun(self: catalog.Logger, level: vim.log.levels, msg: string, ...: any): string
+---@field message fun(self: catalog.logger, level: vim.log.levels, msg: string, ...: any): string
 ---Debug message; only notified after setup(true).
----@field dbg fun(self: catalog.Logger, msg: string, ...: any): string
+---@field dbg fun(self: catalog.logger, msg: string, ...: any): string
 ---Error message.
----@field err fun(self: catalog.Logger, msg: string, ...: any): string
+---@field err fun(self: catalog.logger, msg: string, ...: any): string
 ---Info message.
----@field inf fun(self: catalog.Logger, msg: string, ...: any): string
+---@field inf fun(self: catalog.logger, msg: string, ...: any): string
 ---Warning message.
----@field wrn fun(self: catalog.Logger, msg: string, ...: any): string
+---@field wrn fun(self: catalog.logger, msg: string, ...: any): string
 ---Alternates between `starting`/`finishing` debug messages, marking setup progress.
----@field header fun(self: catalog.Logger)
+---@field header fun(self: catalog.logger)
 
----Shared prototype; all cached loggers index into this table, so the methods
----exist only once in memory regardless of how many scopes are created.
+---Shared prototype; instances created by [M.new](lua://catalog.log.new) only
+---carry their own state (`prefix`, `started`) and resolve methods through
+---`__index`, so the functions exist exactly once regardless of scope count.
 local logger = {}
 
 ---Formats a message and notifies it when `level` is enabled.
+---
+---Formatting is skipped entirely when the level is disabled, so callers may
+---pass expensive arguments or partially-invalid format strings safely.
 ---@param level vim.log.levels
 ---@param msg string Format string, or plain message when no extra args.
 ---@vararg any Format arguments.
@@ -86,17 +97,23 @@ function logger:wrn(msg, ...)
 	return self:message(levels.WARN, msg, ...)
 end
 
+---Emits alternating `starting`/`finishing` debug markers around a section,
+---making paired setup blocks easy to spot in logs. State lives on the
+---instance, so nested sections need one logger each.
+---@return string
 function logger:header()
 	self.started = not self.started
-	self:message(levels.DEBUG, self.started and "starting" or "finishing")
+	return self:message(levels.DEBUG, self.started and "starting" or "finishing")
 end
 
 ---Configures which levels are notified.
 ---
 ---When `silent` is true, ERROR/WARN/INFO are muted; when `debug` is true,
----DEBUG is notified as well.
+---DEBUG is notified as well. Returns the module so `setup(...).new(...)`
+---chains in a single expression.
 ---@param debug boolean Notify DEBUG messages.
 ---@param silent boolean Mute ERROR/WARN/INFO messages.
+---@return table M The module itself, for chaining.
 function M.setup(debug, silent)
 	local show_messages = not silent
 
@@ -110,9 +127,10 @@ function M.setup(debug, silent)
 	return M
 end
 
----Returns the logger tagged with `scope`, creating it on first use.
----@param scope string
----@return catalog.Logger
+---Returns the logger tagged with `scope`, creating it on first use and
+---reusing the same instance afterwards.
+---@param scope string Dot-separated module-ish name (e.g. `"provider.mason"`).
+---@return catalog.logger
 function M.new(scope)
 	if not cache[scope] then
 		cache[scope] = setmetatable({ prefix = "[" .. scope .. "] " }, { __index = logger })
