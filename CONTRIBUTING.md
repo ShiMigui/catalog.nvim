@@ -45,10 +45,25 @@ Please be respectful and constructive in all interactions. We are committed to p
 ### Local Development
 
 1. Clone the repository
-2. Run tests to verify everything works:
+2. Activate the git hooks (one command, per clone):
+   ```bash
+   make hooks
+   ```
+3. Run tests to verify everything works:
    ```bash
    make test
    ```
+
+### Git Hooks
+
+Versioned in `.githooks/` and activated with `make hooks` (sets `core.hooksPath`):
+
+| Hook         | Runs                                              | Effect on failure            |
+| ------------ | ------------------------------------------------- | ---------------------------- |
+| `pre-commit` | `make format-check`, `make lint`, `make test`     | Commit is blocked            |
+| `commit-msg` | Conventional Commits validation of the subject    | Message guidance is printed  |
+
+Bypass a failing hook once with `git commit --no-verify` — use sparingly and never to land red tests.
 
 ## Testing
 
@@ -62,7 +77,7 @@ make test
 make test-verbose
 
 # Run a specific test file
-make test-file FILE=tests/init_spec.lua
+make test-file FILE=tests/provider_spec.lua
 ```
 
 ### Test Coverage
@@ -70,10 +85,7 @@ make test-file FILE=tests/init_spec.lua
 - **Minimum coverage: 80%**
 - All new features must include tests
 - All bug fixes must include regression tests
-- Run coverage locally before submitting:
-  ```bash
-  make coverage
-  ```
+- There is no automated coverage report yet (`plenary.coverage` is unavailable in the pinned plenary version); keep the spec suite green with `make test` and cover every public code path you touch
 
 ### Writing Tests
 
