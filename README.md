@@ -4,7 +4,7 @@
 
 ## Features
 
-- **Provider registry** — Mason ships built-in; bring your own sources with a 3-field table.
+- **Provider registry** — Mason ships built-in, but nothing is implicit: you register only the providers you use.
 - **Session cache** — installed packages are seeded at startup, so lookups never redo work.
 - **LSP integration** — merge defaults, configure and enable servers by name.
 - **Auto-install** — the first time you open a filetype, its mapped tools are provided and installed.
@@ -49,6 +49,9 @@ Mason's registry is lazy — make sure it is loaded before `setup()`:
         local registry = require("mason-registry")
 
         local function run()
+            -- Register providers explicitly: add/remove lines to fit your setup
+            require("catalog.provider.mason")
+
             require("catalog").setup({
                 lsp = {
                     config_by = {
@@ -101,6 +104,7 @@ TypeScript with formatters/linters handled automatically on first open:
         "neovim/nvim-lspconfig",
     },
     config = function()
+        require("catalog.provider.mason")
         require("catalog").setup({
             auto_install = { formatter = true, linter = true }, -- lsp kind off: ts server comes from ensure_installed below
             ensure_installed = { "typescript-language-server" },
@@ -118,8 +122,8 @@ TypeScript with formatters/linters handled automatically on first open:
 
 ## How installation works
 
-1. **Providers** map a package name to a `catalog.package` handle. The built-in Mason provider registers itself during `setup()`.
-2. **Cache seeding** — at startup every package already installed through a provider is loaded into the session cache.
+1. **Providers** map a package name to a `catalog.package` handle. Nothing is registered implicitly: require `catalog.provider.mason` for the built-in one and/or `append()` your own, before calling `setup()`.
+2. **Cache seeding** — at startup every package already installed through your registered providers is loaded into the session cache.
 3. **Consumers** (`ensure_installed`, LSP setup, auto-install) ask the registry via `provide()` / `try_provide()`; hits are cached for the whole session.
 
 ## Auto-install mapping
