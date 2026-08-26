@@ -14,6 +14,13 @@ local default = {}
 ---@class catalog.lsp
 ---@field name string Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
 ---@field config vim.lsp.Config Configuration merged so far; starts empty.
+---Deep-merges `cfg` into [config](lua://catalog.lsp.config) (new values win)
+---and returns the same instance, so calls can be chained.
+---@field update fun(self: catalog.lsp, cfg: vim.lsp.Config): catalog.lsp
+---Registers the merged config and enables the server (no-op when already enabled).
+---@field enable fun(self: catalog.lsp)
+---Whether the editor currently has this server enabled.
+---@field is_enabled fun(self: catalog.lsp): boolean
 
 ---Method table used as `__index` for every [catalog.lsp](lua://catalog.lsp) instance.
 local lsp = {}
@@ -42,6 +49,10 @@ function lsp.enable(self)
 	end
 end
 
+---Checks with the editor whether this server is currently enabled, letting
+---consumers skip reconfiguration without duplicating the check.
+---@param self catalog.lsp
+---@return boolean
 function lsp.is_enabled(self)
 	return vim.lsp.is_enabled(self.name)
 end

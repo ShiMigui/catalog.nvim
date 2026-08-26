@@ -1,22 +1,9 @@
----Type definitions for the LSP integration.
+---LSP integration.
 ---
----This module only carries annotations (`@meta`) and is never loaded at
----runtime; the implementation lives in `catalog.lsp.config`.
-
----Handle over a language server configuration.
----
----Instances are created by `catalog.lsp.config.new(name)` and share one
----method table through a metatable, so each handle costs only its own state.
----@class catalog.lsp
----Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
----@field name string
----Configuration merged so far; starts empty.
----@field config vim.lsp.Config
----Deep-merges `cfg` into [config](lua://catalog.lsp.config) (new values win)
----and returns the same instance, so calls can be chained.
----@field update fun(self: catalog.lsp, cfg: vim.lsp.Config): catalog.lsp
----Registers the merged config and enables the server (no-op when already enabled).
----@field enable fun(self: catalog.lsp)
+---Merges user defaults into [default_config](lua://catalog.lsp.default_config)
+---and installs + configures every server listed in `opts.config_by`. The
+---[catalog.lsp](lua://catalog.lsp) handle type is declared once in
+---`catalog/lsp/config.lua`, next to its implementation.
 
 local log = require("catalog.log").new("lsp")
 local ensure_installed = require("catalog.scripts.ensure_installed")
