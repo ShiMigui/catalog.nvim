@@ -1,27 +1,42 @@
 # catalog.nvim
 
-`catalog.nvim` is a Neovim plugin that automates package installation and setup through a provider system.
+`catalog.nvim` automates tool installation and configuration in Neovim through a small provider system: package managers (Mason out of the box) feed packages to integrations that install, configure and enable them for you.
 
-It acts as an orchestration layer between package managers (providers) and integrations such as LSPs, formatters, linters, and treesitter.
+## Features
+
+- **Provider registry** — Mason ships built-in; bring your own sources with a 3-field table.
+- **Session cache** — installed packages are seeded at startup, so lookups never redo work.
+- **LSP integration** — merge defaults, configure and enable servers by name.
+- **Auto-install** — the first time you open a filetype, its mapped tools are provided and installed.
+- **Scoped logging** — `[scope]`-prefixed notifications controlled by `debug`/`silent`.
+
+## Requirements
+
+- Neovim >= 0.11 (`vim.lsp.config` / `vim.lsp.enable`)
+- [mason.nvim](https://github.com/nvim-mason/mason.nvim) for the built-in provider
+- [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) (recommended) so server configurations exist to enable
 
 ## Installation
 
+<details>
+<summary>lazy.nvim</summary>
+
 ```lua
 {
     "ShiMigui/catalog.nvim",
     dependencies = {
-        "neovim/nvim-lspconfig", -- recommended for LSP integration
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
     },
-    opts = {
-        silent_errors = false, -- disable error/warning notifications
-        debug = false,         -- enable debug logging
-    },
+    opts = {},
 }
 ```
+
+</details>
 
 ## Quick Start
 
-Example using Mason and LSP integration:
+Mason's registry is lazy — make sure it is loaded before `setup()`:
 
 ```lua
 {
@@ -30,310 +45,86 @@ Example using Mason and LSP integration:
         { "williamboman/mason.nvim", opts = {} },
         "neovim/nvim-lspconfig",
     },
-    opts = {
-        lsp = {
-            "lua-language-server",
-            ["yaml-language-server"] = {
-                settings = {
-                    yaml = { schemas = {} },
+    config = function()
+        local registry = require("mason-registry")
+
+        local function run()
+            require("catalog").setup({
+                lsp = {
+                    config_by = {
+                        lua_ls = {},
+                        ["yaml-language-server"] = {
+                            settings = { yaml = { schemas = {} } },
+                        },
+                    },
+                },
+            })
+        end
+
+        if #registry.get_all_packages() > 0 then
+            run()
+        else
+            registry.refresh(run)
+        end
+    end,
+}
+```
+
+## Setup
+
+`require("catalog").setup({ ... })` accepts:
+
+| Option             | Type                                        | Default       | Description                                                              |
+| ------------------ | ------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
+| `auto_install`     | `boolean \| table<'lsp'\|'formatter'\|'linter', boolean>` | `true` | Install tools mapped for a filetype the first time it is opened. A boolean toggles every kind; a table toggles per kind. |
+| `ensure_installed` | `string[]`                                  | `nil`         | Package names to provide and install eagerly during setup.               |
+| `lsp`              | `table`                                     | `nil`         | LSP integration options (see below).                                     |
+| `debug`            | `boolean`                                   | `false`       | Notify DEBUG messages.                                                   |
+| `silent`           | `boolean`                                   | `false`       | Mute ERROR/WARN/INFO messages.                                           |
+
+### `lsp` options
+
+| Option      | Type                              | Description                                                            |
+| ----------- | --------------------------------- | ---------------------------------------------------------------------- |
+| `default`   | `vim.lsp.Config`                  | Merged into every configured server, on top of catalog's baseline.     |
+| `config_by` | `table<string, vim.lsp.Config>`   | Per-server configuration keyed by server name (`"lua_ls"`, not the package name). Every entry is installed, configured and enabled during setup. |
+
+### Real-world example
+
+TypeScript with formatters/linters handled automatically on first open:
+
+```lua
+{
+    "ShiMigui/catalog.nvim",
+    dependencies = {
+        { "williamboman/mason.nvim", opts = {} },
+        "neovim/nvim-lspconfig",
+    },
+    config = function()
+        require("catalog").setup({
+            auto_install = { formatter = true, linter = true }, -- lsp kind off: ts server comes from ensure_installed below
+            ensure_installed = { "typescript-language-server" },
+            lsp = {
+                default = { flags = { debounce_text_changes = 150 } },
+                config_by = {
+                    ts_ls = {},
+                    eslint = { settings = { workingDirectories = { mode = "auto" } } },
                 },
             },
-        },
-    },
-    config = function(_, opts)
-        local registry = require("mason-registry")
-
-        local function run()
-            require("catalog").setup(opts)
-        end
-
-        -- Ensure Mason registry is loaded before setup
-        if #registry.get_all_packages() > 0 then
-            run()
-        else
-            registry.refresh(run)
-        end
+        })
     end,
 }
 ```
 
-## Real-World Examples
+## How installation works
 
-### TypeScript/JavaScript
+1. **Providers** map a package name to a `catalog.package` handle. The built-in Mason provider registers itself during `setup()`.
+2. **Cache seeding** — at startup every package already installed through a provider is loaded into the session cache.
+3. **Consumers** (`ensure_installed`, LSP setup, auto-install) ask the registry via `provide()` / `try_provide()`; hits are cached for the whole session.
 
-```lua
-{
-    "ShiMigui/catalog.nvim",
-    dependencies = {
-        { "williamboman/mason.nvim", opts = {} },
-        "neovim/nvim-lspconfig",
-        "stevearc/conform.nvim",
-        "mfussenegger/nvim-lint",
-    },
-    opts = {
-        lsp = {
-            "typescript-language-server",
-            "eslint-ls",
-        },
-        lsp_config = {
-            capabilities = "blink.cmp",
-        },
-        auto_install = {
-            formatter = true,
-            linter = true,
-        },
-    },
-    config = function(_, opts)
-        local registry = require("mason-registry")
-        local function run()
-            require("catalog").setup(opts)
-        end
-        if #registry.get_all_packages() > 0 then
-            run()
-        else
-            registry.refresh(run)
-        end
-    end,
-}
-```
+## Auto-install mapping
 
-### Python
-
-```lua
-{
-    "ShiMigui/catalog.nvim",
-    dependencies = {
-        { "williamboman/mason.nvim", opts = {} },
-        "neovim/nvim-lspconfig",
-        "stevearc/conform.nvim",
-        "mfussenegger/nvim-lint",
-    },
-    opts = {
-        lsp = {
-            "pylsp",
-            "ruff-lsp",
-        },
-        auto_install = {
-            formatter = true,
-            linter = true,
-        },
-        treesitter = {
-            ensure_installed = { "python" },
-        },
-    },
-    config = function(_, opts)
-        local registry = require("mason-registry")
-        local function run()
-            require("catalog").setup(opts)
-        end
-        if #registry.get_all_packages() > 0 then
-            run()
-        else
-            registry.refresh(run)
-        end
-    end,
-}
-```
-
-### Go
-
-```lua
-{
-    "ShiMigui/catalog.nvim",
-    dependencies = {
-        { "williamboman/mason.nvim", opts = {} },
-        "neovim/nvim-lspconfig",
-        "stevearc/conform.nvim",
-    },
-    opts = {
-        lsp = {
-            "gopls",
-        },
-        auto_install = {
-            formatter = true,
-        },
-        ensure_installed = { "golangci-lint" },
-        treesitter = {
-            ensure_installed = { "go", "gomod" },
-        },
-    },
-    config = function(_, opts)
-        local registry = require("mason-registry")
-        local function run()
-            require("catalog").setup(opts)
-        end
-        if #registry.get_all_packages() > 0 then
-            run()
-        else
-            registry.refresh(run)
-        end
-    end,
-}
-```
-
-### Rust
-
-```lua
-{
-    "ShiMigui/catalog.nvim",
-    dependencies = {
-        { "williamboman/mason.nvim", opts = {} },
-        "neovim/nvim-lspconfig",
-        "stevearc/conform.nvim",
-    },
-    opts = {
-        lsp = {
-            "rust-analyzer",
-        },
-        auto_install = {
-            formatter = true,
-        },
-        ensure_installed = { "codelldb" },
-        treesitter = {
-            ensure_installed = { "rust" },
-        },
-    },
-    config = function(_, opts)
-        local registry = require("mason-registry")
-        local function run()
-            require("catalog").setup(opts)
-        end
-        if #registry.get_all_packages() > 0 then
-            run()
-        else
-            registry.refresh(run)
-        end
-    end,
-}
-```
-
-## Configuration
-
-The `setup` function accepts a `catalog.Config` table:
-
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `lsp` | `catalog.LspIntegrationConfig` | List of LSPs to install and configure. |
-| `lsp_config` | `catalog.LspDefaultConfig` | Global configuration for all LSPs. |
-| `conform` | `boolean` | **Deprecated:** Use `auto_install = { formatter = true }`. |
-| `lint` | `boolean` | **Deprecated:** Use `auto_install = { linter = true }`. |
-| `treesitter` | `catalog.TreesitterConfig` | Treesitter parser installation and configuration. |
-| `ensure_installed` | `string[]\|string` | Packages to install without setup. |
-| `auto_update` | `boolean` | Automatically update installed packages. |
-| `auto_install` | `boolean\|catalog.AutoInstallConfig` | Auto-install and auto-configure tools by filetype. |
-| `silent_errors` | `boolean` | Disable error notifications. |
-| `debug` | `boolean` | Enable debug logging. |
-
-## Integrations
-
-### LSP
-
-Installs, configures, and enables language servers using Neovim's built-in LSP client.
-
-```lua
-lsp = {
-    -- Keyed entries for custom configuration
-    ["lua-language-server"] = {
-        settings = { Lua = { diagnostics = { globals = { "vim" } } } }
-    },
-
-    -- Array entries for default configuration
-    "marksman",
-    "intelephense",
-
-    -- Disable a specific LSP
-    ["some-server"] = {
-        enabled = false,
-    },
-}
-```
-
-#### Global LSP Config
-
-You can provide global defaults for all LSPs:
-
-```lua
-lsp_config = {
-    capabilities = "blink.cmp", -- or "nvim-cmp"
-    on_attach = function(client, bufnr)
-        -- Global on_attach for all LSPs
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr })
-    end,
-    config = {
-        -- Base vim.lsp.config for all servers
-    },
-}
-```
-
-### Auto Install
-
-Automatically installs and configures recommended LSPs, formatters, and linters when opening a file. Uses a built-in mapping of filetypes to Mason packages with post-install hooks that register tools with conform.nvim, nvim-lint, and vim.lsp.
-
-```lua
--- Enable all types for all filetypes
-auto_install = true
-
--- Enable specific types
-auto_install = {
-    lsp = true,
-    formatter = true,
-    linter = true,
-}
-
--- Only enable specific tools
-auto_install = {
-    lsp = { "lua-language-server", "pyright" },
-    formatter = { "stylua", "prettierd" },
-    linter = { "luacheck", "ruff" },
-}
-```
-
-When a filetype is opened, catalog will:
-1. Resolve the recommended tools via the provider
-2. Install missing tools via Mason (async)
-3. Register the tools with their respective integrations:
-   - **LSP** → `vim.lsp.config()` + `vim.lsp.enable()`
-   - **Formatter** → `conform.formatters_by_ft[ft]`
-   - **Linter** → `lint.linters_by_ft[ft]`
-
-### Treesitter
-
-Installs and configures treesitter parsers.
-
-```lua
-treesitter = {
-    ensure_installed = {
-        "lua",
-        "typescript",
-        "python",
-    },
-    config = {
-        highlight = {
-            enable = true,
-        },
-    },
-}
-```
-
-**Note:** `nvim-treesitter` must be installed as a dependency.
-
-### Ensure Installed
-
-Installs packages without enabling any integration. Useful for CLI tools.
-
-```lua
-ensure_installed = {
-    "pgformatter",
-}
-```
-
-### Auto Update
-
-Automatically updates all installed packages when the plugin loads.
-
-```lua
-auto_update = true
-```
+The filetype → tools mapping lives in `lua/catalog/auto_install/table.lua`. When you open a file whose filetype has an entry (e.g. `python`), each mapped tool is provided through the registry and installed; LSP servers also get `default_config` applied and are enabled immediately. Kinds disabled in `auto_install` are skipped silently.
 
 ## Advanced Usage
 
@@ -403,6 +194,8 @@ end
 return M
 ```
 
+> **Note:** unknown names should return `nil` instead of raising. Mason's registry raises for unknown packages, so only ask it for names you trust.
+
 ### Registering a Custom Provider
 
 ```lua
@@ -412,18 +205,11 @@ local my_provider = require("catalog.provider.my_provider")
 require("catalog.provider").append(my_provider)
 ```
 
-### Using Multiple Providers
-
-Catalog asks every registered provider in registration order. The first provider that provides a package wins, and results are cached per session:
-
-```lua
--- Example: register local packages first, then Mason (built-in)
-require("catalog.provider").append(local_provider) -- mason registers itself on setup()
-```
+Providers are consulted in registration order; the first one that provides a package wins.
 
 ## Design Principles
 
-* **Lazy Installation:** Packages are only installed when required by an integration.
+* **Lazy Installation:** Packages are only installed when required by an integration or explicitly requested.
 * **Provider Agnostic:** Catalog works with any provider implementing the interface (Mason is built-in).
 * **Orchestration First:** Focuses on connecting packages to integrations rather than implementing the setup logic itself.
 
@@ -452,28 +238,17 @@ This project includes guidelines for AI agents in [AGENTS.md](AGENTS.md). All AI
 1. Ensure `mason.nvim` is loaded before `catalog.setup()`
 2. Check if the package is installed: `:Mason` to open Mason UI
 3. Enable debug logging: `opts = { debug = true }`
-4. Run `:CatalogShowLSPs` to see configured servers
+4. Check that the `config_by` key matches the server name expected by nvim-lspconfig (e.g. `ts_ls`, not `typescript-language-server`)
 
 ### Package not found
 
 1. Check the package name on [mason-registry](https://github.com/nvim-mason/mason-registry)
-2. Some packages have different names in Mason (e.g., `typescript-language-server` vs `tsserver`)
+2. Some packages have different names than their servers (e.g., `typescript-language-server` vs `ts_ls`)
 3. Enable debug logging to see provide errors
 
 ### Formatter/Linter not installing
 
-1. If using `auto_install = { formatter = true }`, ensure `conform.nvim` is installed for formatters, or `nvim-lint` for linters
-2. Check the formatter/linter name matches the command in the respective plugin
-3. Some formatters/linters may not be available in Mason
+1. Ensure the kind is enabled: `opts = { auto_install = { formatter = true } }`
+2. Check the filetype actually has an entry in the mapping table
+3. Some tools may not be available in Mason
 4. Check logs with `opts = { debug = true }`
-
-### Treesitter parsers not installing
-
-1. Ensure `nvim-treesitter` is installed as a dependency
-2. Check parser name at [treesitter parsers](https://github.com/nvim-treesitter/nvim-treesitter#supported-languages)
-3. Run `:TSInstall <parser>` manually to test
-
-### Performance issues
-
-1. Use `silent = true` to reduce notification overhead
-2. The package cache lives for the whole Neovim session (seeded from installed packages at `setup()`); restart Neovim to rebuild it

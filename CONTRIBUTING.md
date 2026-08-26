@@ -102,24 +102,22 @@ make test-file FILE=tests/init_spec.lua
 ### File Structure
 
 ```
-lua/catalog/
-├── init.lua              -- Main entry point
-├── log.lua              -- Logging system
-├── provider/
-│   ├── init.lua         -- Provider management
-│   ├── meta.lua         -- Type definitions
-│   ├── mason.lua        -- Mason provider
-│   └── lsp.lua          -- LSP helper
-├── lsp/
-│   ├── init.lua         -- LSP integration
-│   └── config.lua       -- LSP configuration
-├── conform.lua          -- Conform integration
-├── lint.lua             -- Lint integration
-├── treesitter.lua       -- Treesitter integration
-├── ensure_installed.lua -- Package installation
-├── auto_update.lua      -- Auto update
-├── auto_install.lua     -- Auto install
-└── auto_install_tools.lua -- Filetype mapping
+lua/
+├── catalog.lua                    -- Entry point: setup() and option normalization
+└── catalog/
+    ├── log.lua                    -- Scoped logging system
+    ├── lsp/
+    │   ├── init.lua               -- LSP integration setup
+    │   └── config.lua             -- catalog.lsp handle (update/enable/is_enabled)
+    ├── provider/
+    │   ├── init.lua               -- Provider registry and session cache
+    │   └── mason.lua              -- Built-in Mason provider
+    ├── scripts/
+    │   ├── ensure_installed.lua   -- Provide + install packages by name
+    │   └── ensure_list_of.lua     -- Option list normalizer
+    └── auto_install/
+        ├── init.lua               -- FileType autocmd install hooks
+        └── table.lua              -- Filetype -> tools mapping
 ```
 
 ## Commit Conventions
