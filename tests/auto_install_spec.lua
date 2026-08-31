@@ -136,7 +136,14 @@ describe("catalog.auto_install", function()
 		require("catalog.auto_install").setup({ lsp = true })
 		trigger_ft("markdown")
 
-		assert.equals(vim.log.levels.WARN, notified[1].level)
+		local warn
+		for _, n in ipairs(notified) do
+			if n.level == vim.log.levels.WARN then
+				warn = n
+				break
+			end
+		end
+		assert.not_nil(warn)
 		assert.equals(nil, next(state.enables))
 	end)
 end)

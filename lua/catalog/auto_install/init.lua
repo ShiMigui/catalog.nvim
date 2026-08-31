@@ -87,6 +87,9 @@ return {
 			return
 		end
 
+		local enabled_kinds = vim.tbl_keys(cbs)
+		table.sort(enabled_kinds)
+		log:inf("Registering auto-install hooks for %s", table.concat(enabled_kinds, ", "))
 		vim.api.nvim_create_autocmd("FileType", {
 			group = vim.api.nvim_create_augroup("catalog.auto_install", { clear = true }),
 			callback = function()

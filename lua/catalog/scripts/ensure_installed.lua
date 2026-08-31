@@ -14,6 +14,7 @@ local cache = {}
 ---@return table<string, catalog.package> map Only successfully provided packages.
 return function(list)
 	log:header()
+	log:inf("Installing %d package(s) from ensure_installed", #list)
 	local map = {}
 	for _, name in pairs(list) do
 		if cache[name] == nil then
@@ -28,5 +29,6 @@ return function(list)
 			map[name] = cache[name]
 		end
 	end
+	log:header()
 	return map
 end
