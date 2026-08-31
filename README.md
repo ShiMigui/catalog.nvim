@@ -79,7 +79,7 @@ Mason's registry is lazy — make sure it is loaded before `setup()`:
 
 | Option             | Type                                        | Default       | Description                                                              |
 | ------------------ | ------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
-| `auto_install`     | `boolean \| table<'lsp'\|'formatter'\|'linter', boolean> & { callback?: fun(lsps, formatters, linters) }` | `true` | Install tools mapped for a filetype the first time it is opened. A boolean toggles every kind; a table toggles per kind and may add a `callback` (see below). |
+| `auto_install`     | `boolean \| table<'lsp'\|'formatter'\|'linter', boolean> & { callback?: fun(ft, lsps, formatters, linters) }` | `true` | Install tools mapped for a filetype the first time it is opened. A boolean toggles every kind; a table toggles per kind and may add a `callback` (see below). |
 | `ensure_installed` | `string[]`                                  | `nil`         | Package names to provide and install eagerly during setup.               |
 | `lsp`              | `table`                                     | `nil`         | LSP integration options (see below).                                     |
 | `debug`            | `boolean`                                   | `false`       | Notify DEBUG messages.                                                   |
@@ -132,14 +132,15 @@ The filetype → tools mapping lives in `lua/catalog/auto_install/table.lua`. Wh
 
 ### `callback` — react to what got installed
 
-`auto_install` also accepts a `callback` function that runs after a filetype is processed, receiving the provided packages per enabled kind:
+`auto_install` also accepts a `callback` function that runs after a filetype is processed, receiving the filetype first and the provided packages per enabled kind:
 
 ```lua
 auto_install = {
     lsp = true,
     formatter = true,
     linter = false,
-    callback = function(lsps, formatters, linters)
+    callback = function(ft, lsps, formatters, linters)
+        -- ft = e.g. "lua" — the filetype that triggered the install
         -- lsps/formatters/linters: catalog.package[] for enabled kinds
         -- a disabled kind arrives as `false` (here: linters == false)
     end,
