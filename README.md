@@ -8,7 +8,7 @@
 - **Session cache** — installed packages are seeded at startup, so lookups never redo work.
 - **LSP integration** — merge defaults, configure and enable servers by name.
 - **Auto-install** — the first time you open a filetype, its mapped tools are provided and installed.
-- **Scoped logging** — `[scope]`-prefixed notifications controlled by `debug`/`silent`.
+- **Scoped logging** — `[scope]`-prefixed notifications controlled by `debug`/`silent`, with `>`-indented blocks marking setup stages.
 
 ## Requirements
 
