@@ -38,7 +38,9 @@ function M.setup(opts)
 			return
 		end
 
-		local pkgs = ensure_installed(vim.tbl_keys(config_by))
+		local servers = vim.tbl_keys(config_by)
+		log:inf("Configuring %d LSP server(s)", #servers)
+		local pkgs = ensure_installed(servers)
 		for name, pkg in pairs(pkgs) do
 			pkg.lsp:update(config_by[name])
 			pkg.lsp:enable()

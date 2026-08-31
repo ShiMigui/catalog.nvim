@@ -129,7 +129,7 @@ describe("catalog.log", function()
 		it("logs starting on the first call", function()
 			log.setup(true)
 			log.new("hdr"):header()
-			assert.equals("> > [hdr] starting", last_msg(lvls.DEBUG))
+			assert.equals(">  [hdr] starting", last_msg(lvls.DEBUG))
 		end)
 
 		it("logs finishing on the second call", function()
@@ -137,7 +137,7 @@ describe("catalog.log", function()
 			local logger = log.new("hdr")
 			logger:header()
 			logger:header()
-			assert.equals("> > [hdr] finishing", last_msg(lvls.DEBUG))
+			assert.equals(">  [hdr] finishing", last_msg(lvls.DEBUG))
 		end)
 
 		it("alternates starting/finishing on further calls", function()
@@ -146,17 +146,17 @@ describe("catalog.log", function()
 			logger:header()
 			logger:header()
 			logger:header()
-			assert.equals("> > [hdr] starting", last_msg(lvls.DEBUG))
+			assert.equals(">  [hdr] starting", last_msg(lvls.DEBUG))
 		end)
 
 		it("shares state between cached loggers of the same scope", function()
 			log.setup(true)
 			log.new("shared"):header()
 			log.new("shared"):header()
-			assert.equals("> > [shared] finishing", last_msg(lvls.DEBUG))
+			assert.equals(">  [shared] finishing", last_msg(lvls.DEBUG))
 		end)
 
-		it("indents messages inside nested blocks", function()
+		it("indents messages with a single arrow and padded spaces", function()
 			log.setup(true)
 			local outer = log.new("outer")
 			outer:header()
@@ -171,11 +171,11 @@ describe("catalog.log", function()
 				table.insert(msgs, n.msg)
 			end
 			assert.same({
-				"> > [outer] starting",
-				"> > > [inner] starting",
-				"> > > [inner] inside",
-				"> > > [inner] finishing",
-				"> > [outer] finishing",
+				">  [outer] starting",
+				">   [inner] starting",
+				">   [inner] inside",
+				">   [inner] finishing",
+				">  [outer] finishing",
 				"> [outer] outside",
 			}, msgs)
 		end)

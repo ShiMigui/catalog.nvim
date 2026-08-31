@@ -7,7 +7,7 @@
 ---The [header](lua://catalog.logger.header) is the primary way to mark setup
 ---blocks. Each call toggles the scope's `starting`/`finishing` marker and
 ---drives a shared indent level: `starting` indents, `finishing` de-indents,
----so nested stages read as a tree of `>`-marked messages.
+---so nested stages line up under a single `>` with increasing padding.
 ---
 ---```lua
 ---local log = require("catalog.log").new("provider")
@@ -27,9 +27,11 @@ local enabled = {
 local cache = {}
 local levels = vim.log.levels
 
----Shared indent depth. Starts at 1 so every line carries a leading `> `,
----grows on each `header()` "starting" call and shrinks on each "finishing"
----call. Rendered as one `> ` per level before the `[scope] ` prefix.
+---Shared indent depth. Starts at 1 so every line is marked with a single
+---`>`, grows on each `header()` "starting" call and shrinks on each
+---"finishing" call. Rendered as one `>` plus a `" "` per level before the
+---`[scope] ` prefix, so the arrow stays fixed and blocks drift right by one
+---space per nesting level.
 ---@type integer
 local indent = 1
 
@@ -76,11 +78,12 @@ function logger:message(level, msg, ...)
 	return text
 end
 
----Indented prefix for the current depth, e.g. `> [setup] ` at the base level
----or `> > [setup] ` one block deep.
+---Indented prefix for the current depth: a single `>` followed by one space
+---per level, e.g. `> [setup] ` at the base level and `>  [setup] ` one block
+---deep.
 ---@return string
 function logger:indent()
-	return ("%s%s"):format(string.rep("> ", indent), self.prefix)
+	return ">" .. string.rep(" ", indent) .. self.prefix
 end
 
 ---Logs at DEBUG level (only after setup(true)).

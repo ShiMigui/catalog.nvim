@@ -81,7 +81,13 @@ describe("catalog.lsp", function()
 		lsp.setup({ config_by = { ghost = {} } })
 
 		assert.is_nil(next(recorded.enabled))
-		assert.equals(vim.log.levels.ERROR, notified[1].level)
+		local errors = {}
+		for _, n in ipairs(notified) do
+			if n.level == vim.log.levels.ERROR then
+				table.insert(errors, n)
+			end
+		end
+		assert.equals(1, #errors)
 	end)
 
 	it("logs an error and stops when config_by is not a table", function()
