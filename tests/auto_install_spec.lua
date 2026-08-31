@@ -146,4 +146,68 @@ describe("catalog.auto_install", function()
 		assert.not_nil(warn)
 		assert.equals(nil, next(state.enables))
 	end)
+
+	it("calls the callback with the provided packages per enabled kind", function()
+		register_tools({
+			["lua-language-server"] = "lsp",
+			stylua = "tool",
+			luacheck = "tool",
+		})
+		local got
+		require("catalog.auto_install").setup({
+			lsp = true,
+			formatter = true,
+			linter = true,
+			callback = function(lsps, formatters, linters)
+				got = { lsps = lsps, formatters = formatters, linters = linters }
+			end,
+		})
+		trigger_ft("lua")
+
+		assert.same(
+			{ "lua-language-server" },
+			vim.tbl_map(function(p)
+				return p.name
+			end, got.lsps)
+		)
+		assert.same(
+			{ "stylua" },
+			vim.tbl_map(function(p)
+				return p.name
+			end, got.formatters)
+		)
+		assert.same(
+			{ "luacheck" },
+			vim.tbl_map(function(p)
+				return p.name
+			end, got.linters)
+		)
+	end)
+
+	it("passes false for disabled kinds and omits unprovided packages", function()
+		register_tools({ pylsp = "lsp", black = "tool" }) -- ruff-lsp/isort are missing from the provider
+		local got
+		require("catalog.auto_install").setup({
+			lsp = true,
+			formatter = true,
+			callback = function(lsps, formatters, linters)
+				got = { lsps = lsps, formatters = formatters, linters = linters }
+			end,
+		})
+		trigger_ft("python")
+
+		assert.same(
+			{ "pylsp" },
+			vim.tbl_map(function(p)
+				return p.name
+			end, got.lsps)
+		)
+		assert.same(
+			{ "black" },
+			vim.tbl_map(function(p)
+				return p.name
+			end, got.formatters)
+		)
+		assert.is_false(got.linters)
+	end)
 end)

@@ -79,7 +79,7 @@ Mason's registry is lazy — make sure it is loaded before `setup()`:
 
 | Option             | Type                                        | Default       | Description                                                              |
 | ------------------ | ------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
-| `auto_install`     | `boolean \| table<'lsp'\|'formatter'\|'linter', boolean>` | `true` | Install tools mapped for a filetype the first time it is opened. A boolean toggles every kind; a table toggles per kind. |
+| `auto_install`     | `boolean \| table<'lsp'\|'formatter'\|'linter', boolean> & { callback?: fun(lsps, formatters, linters) }` | `true` | Install tools mapped for a filetype the first time it is opened. A boolean toggles every kind; a table toggles per kind and may add a `callback` (see below). |
 | `ensure_installed` | `string[]`                                  | `nil`         | Package names to provide and install eagerly during setup.               |
 | `lsp`              | `table`                                     | `nil`         | LSP integration options (see below).                                     |
 | `debug`            | `boolean`                                   | `false`       | Notify DEBUG messages.                                                   |
@@ -129,6 +129,24 @@ TypeScript with formatters/linters handled automatically on first open:
 ## Auto-install mapping
 
 The filetype → tools mapping lives in `lua/catalog/auto_install/table.lua`. When you open a file whose filetype has an entry (e.g. `python`), each mapped tool is provided through the registry and installed; LSP servers also get `default_config` applied and are enabled immediately. Kinds disabled in `auto_install` are skipped silently.
+
+### `callback` — react to what got installed
+
+`auto_install` also accepts a `callback` function that runs after a filetype is processed, receiving the provided packages per enabled kind:
+
+```lua
+auto_install = {
+    lsp = true,
+    formatter = true,
+    linter = false,
+    callback = function(lsps, formatters, linters)
+        -- lsps/formatters/linters: catalog.package[] for enabled kinds
+        -- a disabled kind arrives as `false` (here: linters == false)
+    end,
+}
+```
+
+Each argument is the list of packages actually provided for that kind, so you decide what to do with them (wiring formatters into conform.nvim, configuring linters, …) instead of catalog doing the integration internally.
 
 ## Advanced Usage
 

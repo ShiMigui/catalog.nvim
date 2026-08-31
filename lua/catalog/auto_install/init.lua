@@ -19,13 +19,15 @@ local ensure_list_of = require("catalog.scripts.ensure_list_of")
 ---@type table<string, boolean>
 local seen_ft = {}
 
----Builds an installer for one tool kind: quietly provides the package by name
----and hands it to `handle` when a provider knows it.
+---Builds an installer for one tool kind: quietly provides the package by
+---name, hands it to `handle` when a provider knows it, and records it in
+---`acc[kind]` so the [callback](lua://catalog.auto_install_flags) can report
+---what was actually provided.
 ---@param kind catalog.tool_kind Tool category, used for log context.
 ---@param handle fun(pkg: catalog.package) Runs when the package is provided.
----@return fun(name: string)
+---@return fun(acc: table<catalog.tool_kind, catalog.package[]>, name: string)
 local function installer(kind, handle)
-	return function(name)
+	return function(acc, name)
 		log:dbg("Trying to auto-install %s '%s'", kind, name)
 		local pkg = provider.try_provide(name)
 		if not pkg then
@@ -33,13 +35,14 @@ local function installer(kind, handle)
 			return
 		end
 		handle(pkg)
+		acc[kind][#acc[kind] + 1] = pkg
 	end
 end
 
 ---One installer per tool kind. The lsp handle merges defaults and enables the
 ---server only after installing, because enable() is what registers the final
 ---configuration with nvim-lspconfig.
----@type table<catalog.tool_kind, fun(name: string)>
+---@type table<catalog.tool_kind, fun(acc: table<catalog.tool_kind, catalog.package[]>, name: string)>
 local installers = {
 	lsp = installer("lsp", function(pkg)
 		if not pkg.lsp then
@@ -67,12 +70,14 @@ return {
 	---Registers a FileType autocommand (in its own cleared augroup) that
 	---installs, once per filetype, every tool mapped in
 	---[pkgs_table](lua://catalog.auto_install.table) whose kind is enabled in
-	---`opts`. Does nothing at all when no kind is enabled.
-	---@param opts table<catalog.tool_kind, boolean>
+	---`opts`. After the tools of a filetype are processed, `opts.callback`
+	---(if any) is called with the provided packages per enabled kind; disabled
+	---kinds arrive as `false`. Does nothing at all when no kind is enabled.
+	---@param opts catalog.auto_install_flags
 	setup = function(opts)
 		---Only the enabled kinds make it into this map; kinds missing from it
 		---are skipped per-filetype without warnings.
-		---@type table<catalog.tool_kind, fun(name: string)>
+		---@type table<catalog.tool_kind, fun(acc: table<catalog.tool_kind, catalog.package[]>, name: string)>
 		local cbs = {}
 		for kind, install in pairs(installers) do
 			if opts[kind] then
@@ -87,6 +92,7 @@ return {
 			return
 		end
 
+		local callback = opts.callback
 		local enabled_kinds = vim.tbl_keys(cbs)
 		table.sort(enabled_kinds)
 		log:inf("Registering auto-install hooks for %s", table.concat(enabled_kinds, ", "))
@@ -104,13 +110,23 @@ return {
 					return
 				end
 
+				---@type table<catalog.tool_kind, catalog.package[]>
+				local provided = { lsp = {}, formatter = {}, linter = {} }
 				for kind, list in pairs(tools) do
 					local install = cbs[kind]
 					if install then
 						for _, name in ipairs(ensure_list_of(list, "string") or {}) do
-							install(name)
+							install(provided, name)
 						end
 					end
+				end
+
+				if callback then
+					callback(
+						cbs.lsp and provided.lsp or false,
+						cbs.formatter and provided.formatter or false,
+						cbs.linter and provided.linter or false
+					)
 				end
 			end,
 		})
