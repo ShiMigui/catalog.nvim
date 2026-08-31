@@ -71,8 +71,9 @@ return {
 	---installs, once per filetype, every tool mapped in
 	---[pkgs_table](lua://catalog.auto_install.table) whose kind is enabled in
 	---`opts`. After the tools of a filetype are processed, `opts.callback`
-	---(if any) is called with the provided packages per enabled kind; disabled
-	---kinds arrive as `false`. Does nothing at all when no kind is enabled.
+	---(if any) is called with the filetype first and the provided packages per
+	---enabled kind after it; disabled kinds arrive as `false`. Does nothing at
+	---all when no kind is enabled.
 	---@param opts catalog.auto_install_flags
 	setup = function(opts)
 		---Only the enabled kinds make it into this map; kinds missing from it
@@ -123,6 +124,7 @@ return {
 
 				if callback then
 					callback(
+						ft,
 						cbs.lsp and provided.lsp or false,
 						cbs.formatter and provided.formatter or false,
 						cbs.linter and provided.linter or false

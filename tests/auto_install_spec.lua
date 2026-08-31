@@ -158,11 +158,13 @@ describe("catalog.auto_install", function()
 			lsp = true,
 			formatter = true,
 			linter = true,
-			callback = function(lsps, formatters, linters)
-				got = { lsps = lsps, formatters = formatters, linters = linters }
+			callback = function(ft, lsps, formatters, linters)
+				got = { ft = ft, lsps = lsps, formatters = formatters, linters = linters }
 			end,
 		})
 		trigger_ft("lua")
+
+		assert.equals("lua", got.ft)
 
 		assert.same(
 			{ "lua-language-server" },
@@ -190,11 +192,13 @@ describe("catalog.auto_install", function()
 		require("catalog.auto_install").setup({
 			lsp = true,
 			formatter = true,
-			callback = function(lsps, formatters, linters)
-				got = { lsps = lsps, formatters = formatters, linters = linters }
+			callback = function(ft, lsps, formatters, linters)
+				got = { ft = ft, lsps = lsps, formatters = formatters, linters = linters }
 			end,
 		})
 		trigger_ft("python")
+
+		assert.equals("python", got.ft)
 
 		assert.same(
 			{ "pylsp" },

@@ -19,9 +19,9 @@ local log = require("catalog.log").new("setup")
 ---A single tool category handled by auto-install.
 ---@alias catalog.tool_kind 'lsp'|'formatter'|'linter'
 
----Receives the packages provided for each enabled kind after a filetype is
----processed; a kind that is disabled arrives as `false`.
----@alias catalog.auto_install_callback fun(lsps: catalog.package[]|false,
+---Receives the filetype that was processed first, then the packages provided
+---for each enabled kind; a kind that is disabled arrives as `false`.
+---@alias catalog.auto_install_callback fun(ft: string, lsps: catalog.package[]|false,
 ---	formatters: catalog.package[]|false, linters: catalog.package[]|false)
 
 ---Explicit per-kind switches for auto-install, plus an optional callback
