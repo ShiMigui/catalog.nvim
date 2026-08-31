@@ -8,6 +8,9 @@
 local log = require("catalog.log").new("lsp")
 local ensure_installed = require("catalog.scripts.ensure_installed")
 
+---Announces the feature when this module is loaded (once per session).
+log:inf("Configuring servers")
+
 local M = {
 	---Defaults merged into every configured server; extended by
 	---`opts.default` during setup().
@@ -38,9 +41,7 @@ function M.setup(opts)
 			return
 		end
 
-		local servers = vim.tbl_keys(config_by)
-		log:inf("Configuring %d LSP server(s)", #servers)
-		local pkgs = ensure_installed(servers)
+		local pkgs = ensure_installed(vim.tbl_keys(config_by))
 		for name, pkg in pairs(pkgs) do
 			pkg.lsp:update(config_by[name])
 			pkg.lsp:enable()

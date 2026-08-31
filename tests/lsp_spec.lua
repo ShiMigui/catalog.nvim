@@ -94,7 +94,13 @@ describe("catalog.lsp", function()
 		local recorded = register_pkg_provider({ lua_ls = true })
 		lsp.setup({ config_by = "oops" })
 
-		assert.equals(vim.log.levels.ERROR, notified[1].level)
+		local errors = {}
+		for _, n in ipairs(notified) do
+			if n.level == vim.log.levels.ERROR then
+				table.insert(errors, n)
+			end
+		end
+		assert.equals(1, #errors)
 		assert.is_nil(next(recorded.enabled))
 	end)
 end)

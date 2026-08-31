@@ -1,6 +1,9 @@
 local provider = require("catalog.provider")
 local log = require("catalog.log").new("ensure_installed")
 
+---Announces the feature when this module is loaded (once per session).
+log:inf("Installing listed packages")
+
 ---Per-name memo of provided packages; `false` marks names that no provider
 ---could provide, so they are never re-provided (nor re-error-notified) on
 ---later calls.
@@ -14,7 +17,6 @@ local cache = {}
 ---@return table<string, catalog.package> map Only successfully provided packages.
 return function(list)
 	log:header()
-	log:inf("Installing %d package(s) from ensure_installed", #list)
 	local map = {}
 	for _, name in pairs(list) do
 		if cache[name] == nil then
