@@ -4,6 +4,11 @@
 ---prefixed with `[scope] `. All loggers share a single method prototype, so
 ---memory cost per scope is one small table, never a copy of the methods.
 ---
+---The [header](lua://catalog.logger.header) is the primary way to mark setup
+---blocks. Each call toggles the scope's `starting`/`finishing` marker and
+---drives a shared indent level: `starting` indents, `finishing` de-indents,
+---so nested stages read as a tree of `>`-marked messages.
+---
 ---```lua
 ---local log = require("catalog.log").new("provider")
 ---log:inf("resolved %d package(s)", n)
@@ -22,6 +27,12 @@ local enabled = {
 local cache = {}
 local levels = vim.log.levels
 
+---Shared indent depth. Starts at 1 so every line carries a leading `> `,
+---grows on each `header()` "starting" call and shrinks on each "finishing"
+---call. Rendered as one `> ` per level before the `[scope] ` prefix.
+---@type integer
+local indent = 1
+
 ---Scoped logger; messages are prefixed with `[scope] `.
 ---@class catalog.logger
 ---Rendered `[scope] ` prefix prepended to every notification.
@@ -39,7 +50,8 @@ local levels = vim.log.levels
 ---@field inf fun(self: catalog.logger, msg: string, ...: any): string
 ---Warning message.
 ---@field wrn fun(self: catalog.logger, msg: string, ...: any): string
----Alternates between `starting`/`finishing` debug messages, marking setup progress.
+---Alternates between `starting`/`finishing` markers, marking setup progress
+---while indenting (`starting`) and unindenting (`finishing`) the message tree.
 ---@field header fun(self: catalog.logger)
 
 ---Shared prototype; instances created by [M.new](lua://catalog.log.new) only
@@ -47,8 +59,7 @@ local levels = vim.log.levels
 ---`__index`, so the functions exist exactly once regardless of scope count.
 local logger = {}
 
----Formats a message and notifies it when `level` is enabled.
----
+---Formats `msg` with `...`, indents it, and notifies when `level` is enabled.
 ---Formatting is skipped entirely when the level is disabled, so callers may
 ---pass expensive arguments or partially-invalid format strings safely.
 ---@param level vim.log.levels
@@ -61,8 +72,15 @@ function logger:message(level, msg, ...)
 	end
 
 	local text = select("#", ...) > 0 and msg:format(...) or msg
-	vim.notify(self.prefix .. text, level)
+	vim.notify(self:indent() .. text, level)
 	return text
+end
+
+---Indented prefix for the current depth, e.g. `> [setup] ` at the base level
+---or `> > [setup] ` one block deep.
+---@return string
+function logger:indent()
+	return ("%s%s"):format(string.rep("> ", indent), self.prefix)
 end
 
 ---Logs at DEBUG level (only after setup(true)).
@@ -97,13 +115,22 @@ function logger:wrn(msg, ...)
 	return self:message(levels.WARN, msg, ...)
 end
 
----Emits alternating `starting`/`finishing` debug markers around a section,
----making paired setup blocks easy to spot in logs. State lives on the
----instance, so nested sections need one logger each.
+---Toggles a scope's `starting`/`finishing` marker, driving the shared indent:
+---`starting` moves one level deeper and `finishing` pops back. The marker is a
+---DEBUG message rendered at the depth it opens/closes, so content logged inside
+---the block lines up between its two markers.
 ---@return string
 function logger:header()
 	self.started = not self.started
-	return self:message(levels.DEBUG, self.started and "starting" or "finishing")
+
+	if self.started then
+		indent = indent + 1
+		return self:message(levels.DEBUG, "starting")
+	else
+		local text = self:message(levels.DEBUG, "finishing")
+		indent = math.max(1, indent - 1)
+		return text
+	end
 end
 
 ---Configures which levels are notified.
