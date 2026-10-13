@@ -51,6 +51,8 @@ local log = require("catalog.log").new("setup")
 ---Mute ERROR/WARN/INFO messages.
 ---@field silent? boolean
 
+require("catalog.types")
+
 ---@type catalog.opts
 local default_opts = {
 	auto_install = true,

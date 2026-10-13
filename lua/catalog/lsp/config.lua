@@ -1,3 +1,4 @@
+require("catalog.types")
 local log = require("catalog.log").new("lsp.config")
 ---Implementation of the [catalog.lsp](lua://catalog.lsp) contract.
 ---
@@ -10,17 +11,6 @@ local log = require("catalog.log").new("lsp.config")
 ---share mutable state. TODO: seed this from `catalog.lsp.default_config`
 ---once the two modules share a single source of truth.
 local default = {}
-
----@class catalog.lsp
----@field name string Server name as expected by nvim-lspconfig (e.g. `"lua_ls"`).
----@field config vim.lsp.Config Configuration merged so far; starts empty.
----Deep-merges `cfg` into [config](lua://catalog.lsp.config) (new values win)
----and returns the same instance, so calls can be chained.
----@field update fun(self: catalog.lsp, cfg: vim.lsp.Config): catalog.lsp
----Registers the merged config and enables the server (no-op when already enabled).
----@field enable fun(self: catalog.lsp)
----Whether the editor currently has this server enabled.
----@field is_enabled fun(self: catalog.lsp): boolean
 
 ---Method table used as `__index` for every [catalog.lsp](lua://catalog.lsp) instance.
 local lsp = {}

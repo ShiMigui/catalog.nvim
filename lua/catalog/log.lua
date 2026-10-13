@@ -13,6 +13,7 @@
 ---local log = require("catalog.log").new("provider")
 ---log:inf("resolved %d package(s)", n)
 ---```
+require("catalog.types")
 local M = {}
 
 ---Levels currently notified; defaults keep ERROR/WARN/INFO on so failures

@@ -15,35 +15,8 @@
 ---   load_installed = function() return {} end,
 ---})
 ---```
+require("catalog.types")
 local log = require("catalog.log").new("provider")
-
----A package provided by a provider.
----@class catalog.package
----Name of the provider that provided this package.
----@field provider_name string
----Package name (e.g. `"lua-language-server"`).
----@field name string
----LSP handle used to configure the language server; only set for LSP packages.
----@field lsp? catalog.lsp
----Checks whether the package is already installed.
----@field installed fun(): boolean
----Installs the package; implementations must make this idempotent, since it
----is called unconditionally by consumers.
----@field install fun(self: catalog.package)
-
----Shape every provider implements. Declared as `catalog.provider` after the
----domain term; the `catalog/provider/init.lua` module file is unrelated and
----holds the registry itself.
----@class catalog.provider
----Provider identifier, used in logs and as the registration key.
----@field name string
----Provides `name` as a [catalog.package](lua://catalog.package), or returns
----`nil` when unknown. Must not raise on unknown names.
----@field provide fun(name: string): catalog.package?
----Returns every package already installed through this provider, keyed by
----name; consumed by the registry [load_installed](lua://catalog.provider.load_installed)
----to seed its cache.
----@field load_installed fun(): table<string, catalog.package>
 
 ---@type table<string, catalog.provider>
 local provider_list = {}
