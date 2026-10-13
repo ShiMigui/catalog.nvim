@@ -1,265 +1,140 @@
-# AGENTS.md - Guidelines for AI Agents
-
-This document contains guidelines for AI agents working on catalog.nvim. All AI agents must follow these rules.
-
-## Overview
-
-AI agents are welcome to contribute to catalog.nvim, but must adhere to strict guidelines to maintain code quality and consistency.
-
-## Core Rules
-
-### 1. Follow CONTRIBUTING.md
-
-**All rules in [CONTRIBUTING.md](CONTRIBUTING.md) apply to AI agents.**
-
-Key requirements:
-- Conventional Commits for all commits
-- Feature branches (never commit to `main`)
-- 80% minimum test coverage
-- Run tests before committing
-- Follow Lua style guide
-
-### 2. Do NOT Modify Tests (Unless Requested)
-
-**AI agents must NOT modify test files unless explicitly instructed to do so.**
-
-- Do not create new test files
-- Do not modify existing tests
-- Do not delete tests
-- Do not change test configuration
-
-**Exception:** If the user specifically asks to add/modify tests, you may do so.
-
-### 3. Read Before Writing
-
-Before making any changes:
-
-1. **Read the file you're modifying**
-2. **Understand the existing code structure**
-3. **Check for related code in other files**
-4. **Follow existing patterns and conventions**
-
-### 4. Minimal Changes
-
-- Make only the necessary changes
-- Do not refactor unrelated code
-- Do not add unnecessary features
-- Keep changes focused and minimal
-
-### 5. DX-First, Concise Code
-
-**All generated code must prioritize Developer Experience (DX) and be as concise as possible.**
-
-- Design APIs that are intuitive, predictable, and pleasant to use
-- Prefer clear names and sensible defaults over configuration
-- Write the shortest correct implementation; no boilerplate or dead code
-- Conciseness must never sacrifice readability or correctness
-
-## Development Workflow
-
-### Step 1: Understand the Task
-
-1. Read the issue or request carefully
-2. Identify what needs to be changed
-3. Find all related files
-4. Understand the impact of changes
-
-### Step 2: Create Feature Branch
-
-```bash
-git checkout main
-git pull upstream main
-git checkout -b feat/short-description
-make hooks  # activate versioned git hooks (pre-commit + commit-msg)
-```
-
-### Step 3: Make Changes
-
-1. Read the file before modifying
-2. Make minimal, focused changes
-3. Follow existing code style
-4. Add type annotations if needed
-
-### Step 4: Verify Changes
-
-```bash
-# Run tests (MANDATORY)
-make test
-
-# Check coverage
-make coverage
-
-# Run linter
-luacheck lua/
-
-# Format code
-stylua lua/
-```
-
-### Step 5: Commit
-
-```bash
-git add .
-git commit -m "feat(scope): description"
-```
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/).
-
-### Step 6: Push and Create PR
-
-```bash
-git push origin feat/short-description
-```
-
-Create PR with proper description and link to issue.
-
-## Code Quality Requirements
-
-### Testing
-
-- **Minimum coverage: 80%**
-- Tests must pass before committing
-- Do not modify tests unless requested
-- New features should have tests (but ask user first)
-
-### Code Style
-
-- Use `stylua` for formatting
-- Use `luacheck` for linting
-- Follow existing patterns
-- Add type annotations
-
-### Documentation
-
-- Update README if adding features
-- Add comments for complex logic
-- Document public functions
-
-## Prohibited Actions
-
-### Never Do These
-
-1. **Never commit to `main`**
-2. **Never force push**
-3. **Never modify tests without permission**
-4. **Never skip tests**
-5. **Never commit secrets or keys**
-6. **Never break existing functionality**
-7. **Never add unnecessary dependencies**
-
-### Always Do These
-
-1. **Always create feature branches**
-2. **Always run tests**
-3. **Always follow commit conventions**
-4. **Always read files before modifying**
-5. **Always make minimal changes**
-6. **Always verify your work**
-
-## File Structure Reference
-
-```
-lua/
-├── catalog.lua                    -- Entry point: setup() and option normalization
-└── catalog/
-    ├── log.lua                    -- Scoped logging system
-    ├── lsp/
-    │   ├── init.lua               -- LSP integration setup
-    │   └── config.lua             -- catalog.lsp handle (update/enable/is_enabled)
-    ├── provider/
-    │   ├── init.lua               -- Provider registry and session cache
-    │   └── mason.lua              -- Built-in Mason provider
-    ├── scripts/
-    │   ├── ensure_installed.lua   -- Provide + install packages by name
-    │   └── ensure_list_of.lua     -- Option list normalizer
-    └── auto_install/
-        ├── init.lua               -- FileType autocmd install hooks
-        └── table.lua              -- Filetype -> tools mapping
-```
-
-## Testing Reference
-
-### Test Files Location
-
-```
-tests/
-├── minimal_init.lua        -- Headless test bootstrap
-├── catalog_spec.lua        -- setup() wiring and option coercion
-├── log_spec.lua            -- Logging system
-├── provider_spec.lua       -- Registry, cache, provide/try_provide
-├── mason_spec.lua          -- Mason provider conversion
-├── scripts_spec.lua        -- ensure_installed / ensure_list_of
-├── lsp_spec.lua            -- LSP setup flow
-├── lsp_config_spec.lua     -- catalog.lsp handle behavior
-└── auto_install_spec.lua   -- Auto-install hooks
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-make test
-
-# Run specific test
-make test-file FILE=tests/init_spec.lua
-
-# Verbose output
-make test-verbose
-```
-
-## Commit Message Examples
-
-### Good
-
-```
-feat(lsp): add on_attach support
-fix(provider): resolve cache stale issue
-docs: update README
-test: add tests for auto_install
-refactor(log): simplify logging system
-```
-
-### Bad
-
-```
-update code
-fix bug
-add feature
-wip
-stuff
-```
-
-## Common Mistakes to Avoid
-
-1. **Committing to `main`** - Always use feature branches
-2. **Skipping tests** - Always run `make test`
-3. **Modifying tests** - Don't unless explicitly asked
-4. **Poor commit messages** - Use conventional commits
-5. **Large changes** - Keep changes minimal and focused
-6. **Not reading code** - Always read before modifying
-7. **Breaking changes** - Ensure backward compatibility
-
-## Questions?
-
-If you're an AI agent and have questions:
-
-1. Read CONTRIBUTING.md
-2. Check existing code patterns
-3. Ask the user for clarification
-4. Follow existing conventions
-
-## Summary
-
-AI agents must:
-- ✅ Follow CONTRIBUTING.md
-- ✅ Create feature branches
-- ✅ Run tests (make test)
-- ✅ Use conventional commits
-- ✅ Make minimal changes
-- ✅ Read before writing
-- ✅ Write DX-first, concise code
-- ❌ Modify tests (unless asked)
-- ❌ Commit to main
-- ❌ Skip testing
-
-Thank you for following these guidelines!
+# Instructions for AI Coding Agents
+
+These guidelines apply to AI agents working in `catalog.nvim`. Follow
+the repository's `CONTRIBUTING.md` and keep changes correct, focused,
+and easy to maintain.
+
+## Before changing code
+
+1.  Read the files relevant to the task.
+2.  Trace related code paths and existing conventions before designing a
+    solution.
+3.  Identify the intended behavior and the smallest change that
+    satisfies it.
+4.  Ask for clarification when a requirement is materially ambiguous; do
+    not invent product requirements.
+
+## Design principles
+
+### Keep it simple
+
+-   Prefer the smallest clear solution that meets the requirements.
+-   Do not add speculative features, unnecessary dependencies, or
+    configuration options without a concrete use case.
+-   Avoid abstractions and indirection that make the code harder to
+    understand.
+-   Concise code is valuable only when it remains readable and correct.
+
+### Avoid duplication
+
+-   Reuse existing functions, helpers, and conventions when they fit the
+    requirement.
+-   Keep business rules and normalization logic in one appropriate
+    place.
+-   Extract shared logic when duplication is meaningful, but do not
+    create generic abstractions to eliminate trivial repetition.
+-   Fix the source of a problem rather than adding parallel workarounds.
+-   Remove obsolete code only when its lack of use is established.
+
+### Keep modules cohesive
+
+-   Give each module a clear responsibility.
+-   Keep implementation details local and expose only the API consumers
+    need.
+-   Avoid circular dependencies and unnecessary coupling.
+-   Do not create one module per function by default; group related
+    behavior coherently.
+-   Follow the existing architecture unless the task specifically
+    requires changing it.
+
+## Lua and Neovim conventions
+
+-   Follow the existing Lua style and format with StyLua.
+-   Use meaningful names and EmmyLua/LuaLS annotations where they
+    clarify public APIs or non-obvious types.
+-   Document public functions and non-obvious behavior; keep comments
+    concise and current.
+-   Use Neovim APIs compatible with the project's declared minimum
+    version.
+-   Preserve compatibility with the Neovim LSP API used by the project
+    (`vim.lsp.config` and `vim.lsp.enable`).
+-   Keep provider behavior consistent with the documented provider
+    interface.
+-   Prefer explicit error handling and useful diagnostic context over
+    silently swallowing failures.
+
+## Tests and verification
+
+-   Do not modify unrelated tests or weaken assertions to make a change
+    pass.
+-   Add or update tests when the requested behavior requires coverage,
+    including regression tests for bug fixes. If the user explicitly
+    prohibits test changes, explain the verification trade-off.
+-   Run the relevant tests and checks available in the repository. At
+    minimum, run `make test` when practical.
+-   Run formatting and lint checks when available, such as
+    `make format-check`, `make lint`, `stylua`, or `luacheck`.
+-   Report commands that could not be run and why. Never claim that a
+    check passed unless it was actually run.
+-   Do not claim a coverage threshold is met unless the repository has a
+    working way to measure it.
+
+## Scope and safety
+
+-   Make focused changes; do not refactor unrelated code.
+-   Do not change public behavior unintentionally.
+-   Do not commit secrets, credentials, personal data, or generated
+    artifacts unless explicitly required.
+-   Never commit directly to `main`, force-push, or create commits
+    unless the user asks you to perform Git operations.
+-   Do not bypass failing checks without explaining the reason.
+
+## Documentation
+
+-   Update the README when user-facing behavior, configuration,
+    requirements, or examples change.
+-   Keep examples consistent with the current implementation.
+-   Do not document unsupported options, commands, or guarantees.
+-   Avoid repeating long instructions across files; link to
+    `CONTRIBUTING.md` for contributor workflow.
+-   Write all documentation, comments, and responses in English.
+
+## Suggested workflow
+
+1.  Inspect the repository and identify relevant code.
+2.  Make the smallest coherent implementation.
+3.  Add or update relevant tests.
+4.  Run applicable tests, linting, and formatting checks.
+5.  Review the diff for duplication, unnecessary complexity, and
+    unrelated changes.
+6.  Summarize what changed, what was verified, and any remaining
+    limitations.
+
+## Repository structure
+
+The main implementation currently lives under `lua/catalog/`. Check the
+actual repository before relying on this outline, since files may
+change:
+
+-   `lua/catalog.lua`: public entry point and option normalization.
+-   `lua/catalog/log.lua`: scoped logging.
+-   `lua/catalog/lsp/`: LSP integration.
+-   `lua/catalog/provider/`: provider registry and providers.
+-   `lua/catalog/scripts/`: installation and option helpers.
+-   `lua/catalog/auto_install/`: filetype-based installation mapping.
+
+## Versioning and Git Tags
+
+- Follow Semantic Versioning (`MAJOR.MINOR.PATCH`) for stable releases.
+- Use annotated Git tags for releases, following the existing repository convention (for example, `v1.2.3`).
+- Never create, move, overwrite, or delete release tags unless explicitly instructed by the user.
+- Never create a release tag automatically as part of an ordinary code change, commit, or pull request.
+- Before preparing a release, inspect the existing tags and review the changes since the latest release.
+- Ensure the release version is consistent with the project's changelog and release notes, when present.
+- Do not assume that a change qualifies for a major, minor, or patch release without considering its impact on the public API and existing behavior.
+- If a release requires changes to version metadata or documentation, update them only when the release task calls for it.
+- Do not push tags or publish releases without explicit authorization.
+- When asked to prepare a release, report the proposed version, the reasoning behind it, and any checks that remain incomplete.
+
+The implementation is the source of truth when it differs from stale
+documentation.
