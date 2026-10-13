@@ -1,241 +1,191 @@
 # Contributing to catalog.nvim
 
-Thank you for your interest in contributing to catalog.nvim! This document provides guidelines and information for contributors.
+Thank you for helping improve `catalog.nvim`. This guide describes how
+to set up a local checkout, run checks, and submit a focused
+contribution.
 
-## Table of Contents
+## Code of conduct
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Testing](#testing)
-- [Code Style](#code-style)
-- [Commit Conventions](#commit-conventions)
-- [Pull Request Process](#pull-request-process)
-- [Branch Protection](#branch-protection)
+Be respectful, constructive, and considerate in all project discussions
+and reviews.
 
-## Code of Conduct
+## Getting started
 
-Please be respectful and constructive in all interactions. We are committed to providing a welcoming and inclusive experience for everyone.
+Fork the repository, then clone your fork:
 
-## Getting Started
+``` bash
+git clone https://github.com/YOUR_USERNAME/catalog.nvim.git
+cd catalog.nvim
+git remote add upstream https://github.com/ShiMigui/catalog.nvim.git
+git checkout -b feat/short-description
+```
 
-1. Fork the repository
-2. Clone your fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/catalog.nvim.git
-   cd catalog.nvim
-   ```
-3. Add upstream remote:
-   ```bash
-   git remote add upstream https://github.com/ShiMigui/catalog.nvim.git
-   ```
-4. Create a feature branch:
-   ```bash
-   git checkout -b feat/your-feature-name
-   ```
+Use a `fix/short-description` branch for bug fixes. Do not work directly
+on `main`.
 
-## Development Setup
+## Requirements
 
-### Prerequisites
+-   Neovim 0.11 or newer.
+-   Lua development tools used by this repository, including
+    [StyLua](https://github.com/JohnnyMorganz/StyLua) and
+    [Luacheck](https://github.com/mpeterv/luacheck).
+-   The test dependencies declared by the repository, including Plenary
+    if required by the test setup.
 
-- Neovim 0.9+
-- [luacheck](https://github.com/mpeterv/luacheck) (for linting)
-- [stylua](https://github.com/JohnnyMorganz/StyLua) (for formatting)
+Check the `Makefile` and test bootstrap for the current supported
+commands before assuming additional tooling is available.
 
-### Local Development
+## Local setup
 
-1. Clone the repository
-2. Activate the git hooks (one command, per clone):
-   ```bash
-   make hooks
-   ```
-3. Run tests to verify everything works:
-   ```bash
-   make test
-   ```
+Activate the versioned Git hooks once per clone:
 
-### Git Hooks
+``` bash
+make hooks
+```
 
-Versioned in `.githooks/` and activated with `make hooks` (sets `core.hooksPath`):
+Run the test suite:
 
-| Hook         | Runs                                              | Effect on failure            |
-| ------------ | ------------------------------------------------- | ---------------------------- |
-| `pre-commit` | `make format-check`, `make lint`, `make test`     | Commit is blocked            |
-| `commit-msg` | Conventional Commits validation of the subject    | Message guidance is printed  |
-
-Bypass a failing hook once with `git commit --no-verify` — use sparingly and never to land red tests.
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
+``` bash
 make test
+```
 
-# Run tests with verbose output
+### Git hooks
+
+The hooks in `.githooks/` can be enabled with `make hooks`, which
+configures `core.hooksPath`.
+
+  -----------------------------------------------------------------------
+  Hook                                Checks
+  ----------------------------------- -----------------------------------
+  `pre-commit`                        Runs the repository's format check,
+                                      lint, and test commands.
+
+  `commit-msg`                        Checks the commit subject against
+                                      the project's Conventional Commits
+                                      convention.
+  -----------------------------------------------------------------------
+
+If a hook fails, investigate and fix the cause before committing. Avoid
+`--no-verify`; bypassing checks should be exceptional and explained.
+
+## Development guidelines
+
+-   Read relevant code and tests before making changes.
+-   Keep changes focused and avoid unrelated refactoring.
+-   Prefer straightforward implementations over speculative
+    abstractions.
+-   Reuse existing helpers and conventions; avoid duplicated business
+    logic.
+-   Keep module responsibilities clear and dependencies explicit.
+-   Preserve compatibility with the project's supported Neovim version.
+-   Update documentation when public behavior, configuration, or
+    examples change.
+
+AI coding agents must also follow [`AGENTS.md`](AGENTS.md).
+
+## Tests and checks
+
+Run the checks relevant to your change. The standard test command is:
+
+``` bash
+make test
+```
+
+Other useful commands, when defined by the repository, include:
+
+``` bash
 make test-verbose
-
-# Run a specific test file
 make test-file FILE=tests/provider_spec.lua
+make format-check
+make lint
 ```
 
-### Test Coverage
+Check `make help` or inspect the `Makefile` if a command is unavailable.
 
-- **Minimum coverage: 80%**
-- All new features must include tests
-- All bug fixes must include regression tests
-- There is no automated coverage report yet (`plenary.coverage` is unavailable in the pinned plenary version); keep the spec suite green with `make test` and cover every public code path you touch
+New behavior should have tests, and bug fixes should include regression
+coverage where practical. Test both successful behavior and relevant
+failure cases. Do not change tests merely to hide a defect.
 
-### Writing Tests
+Coverage should reflect the public behavior and important branches
+affected by the change. Do not report a specific coverage percentage
+unless the repository has a working coverage tool and the command has
+actually been run.
 
-- Use `plenary.busted` for tests
-- Follow the existing test structure
-- Test both success and error cases
-- Mock external dependencies when necessary
-- Name test files as `<module>_spec.lua`
+For local checks, format and lint the Lua source using the project's
+configured tools. Prefer the repository's Makefile targets so local and
+CI checks stay consistent.
 
-## Code Style
+## Lua style
 
-### Lua
+-   Follow the existing style and the [Lua Style
+    Guide](https://github.com/luarocks/lua-style-guide).
+-   Use StyLua for formatting and Luacheck for linting.
+-   Use descriptive names and add LuaLS/EmmyLua annotations when they
+    improve type clarity.
+-   Use `---` for documentation comments and `--` for implementation
+    comments.
+-   Document public functions and non-obvious behavior without narrating
+    self-explanatory code.
 
-- Follow the [Neovim Lua Style Guide](https://github.com/luarocks/lua-style-guide)
-- Use `stylua` for formatting
-- Use meaningful variable and function names
-- Add type annotations using EmmyLua annotations
+## Commit messages
 
-### Comments
+Use [Conventional Commits](https://www.conventionalcommits.org/) for
+commit subjects:
 
-- Use `---` for documentation comments
-- Use `--` for inline comments
-- Document public functions with `@param` and `@return`
-- Keep comments concise and relevant
-
-### File Structure
-
-```
-lua/
-├── catalog.lua                    -- Entry point: setup() and option normalization
-└── catalog/
-    ├── log.lua                    -- Scoped logging system
-    ├── lsp/
-    │   ├── init.lua               -- LSP integration setup
-    │   └── config.lua             -- catalog.lsp handle (update/enable/is_enabled)
-    ├── provider/
-    │   ├── init.lua               -- Provider registry and session cache
-    │   └── mason.lua              -- Built-in Mason provider
-    ├── scripts/
-    │   ├── ensure_installed.lua   -- Provide + install packages by name
-    │   └── ensure_list_of.lua     -- Option list normalizer
-    └── auto_install/
-        ├── init.lua               -- FileType autocmd install hooks
-        └── table.lua              -- Filetype -> tools mapping
-```
-
-## Commit Conventions
-
-We use [Conventional Commits](https://www.conventionalcommits.org/) for all commits.
-
-### Format
-
-```
+``` text
 <type>(<scope>): <description>
-
-[optional body]
-
-[optional footer(s)]
 ```
 
-### Types
+Common types:
 
-- **feat**: New feature
-- **fix**: Bug fix
-- **docs**: Documentation changes
-- **style**: Code style changes (formatting, etc.)
-- **refactor**: Code refactoring
-- **test**: Adding or updating tests
-- **chore**: Maintenance tasks
-- **perf**: Performance improvements
+-   `feat`: add functionality.
+-   `fix`: correct a bug.
+-   `docs`: change documentation.
+-   `style`: formatting-only changes.
+-   `refactor`: restructure code without changing behavior.
+-   `test`: add or change tests.
+-   `chore`: maintenance tasks.
+-   `perf`: improve performance.
 
-### Examples
+Examples:
 
-```
-feat(lsp): add support for custom on_attach
-fix(provider): resolve cache stale issue
-docs: update README with new features
-test: add tests for auto_install
-chore: update dependencies
-```
-
-### Rules
-
-- Use lowercase for description
-- Use imperative mood ("add" not "added")
-- Keep description under 72 characters
-- Reference issues in footer: `Closes #123`
-
-## Pull Request Process
-
-### Before Submitting
-
-1. **Create a feature branch** (never commit to `main`)
-2. **Write tests** for new features
-3. **Run all tests**: `make test`
-4. **Check coverage**: `make coverage` (minimum 80%)
-5. **Run linter**: `luacheck lua/`
-6. **Format code**: `stylua lua/`
-7. **Update documentation** if needed
-8. **Write clear commit messages** following conventions
-
-### PR Template
-
-1. Fill out the PR template completely
-2. Link related issues
-3. Add screenshots for UI changes
-4. Request review from maintainers
-
-### Review Process
-
-1. All PRs require at least one approval
-2. Tests must pass
-3. Coverage must be ≥ 80%
-4. No merge conflicts
-5. Maintainer will merge after approval
-
-### After Merge
-
-- Delete your feature branch
-- Pull latest changes: `git pull upstream main`
-
-## Branch Protection
-
-### Main Branch Rules
-
-- **No direct commits** to `main`
-- **No force pushes** to `main`
-- **PRs required** for all changes
-- **At least 1 approval** required
-- **Tests must pass**
-- **Coverage ≥ 80%**
-
-### Creating Feature Branches
-
-```bash
-# Always create a new branch for your work
-git checkout main
-git pull upstream main
-git checkout -b feat/your-feature
-
-# Or for bug fixes
-git checkout -b fix/your-bugfix
+``` text
+feat(lsp): support custom server options
+fix(provider): handle missing packages
+docs: clarify setup order
+test(auto-install): cover unknown filetypes
+refactor(log): simplify notification handling
 ```
 
-## Questions?
+Use lowercase, imperative descriptions and keep the subject concise
+(preferably under 72 characters). Add issue references in the footer
+when relevant, such as `Closes #123`.
 
-If you have questions about contributing, please:
+## Pull requests
 
-1. Check existing issues and documentation
-2. Open a new issue with the `question` label
-3. Join discussions in existing issues
+Before opening a pull request:
 
-Thank you for contributing to catalog.nvim!
+1.  Confirm the branch contains only changes related to the task.
+2.  Run relevant tests, formatting, and lint checks.
+3.  Update documentation and examples as needed.
+4.  Review the diff for accidental changes, duplicated logic, and
+    secrets.
+5.  Write a description explaining the problem, the solution, and how it
+    was tested.
+6.  Link related issues and include screenshots or logs when they
+    clarify the change.
+
+Maintainers should review behavior, maintainability, compatibility, and
+test coverage before merging. Repository settings determine required
+approvals and branch protection; contributors should not assume a
+specific approval count unless it is configured.
+
+After merge, update your local `main` branch and remove the feature
+branch when it is no longer needed.
+
+## Reporting issues
+
+Before opening an issue, check existing issues and documentation.
+Include relevant Neovim versions, reproduction steps, expected behavior,
+actual behavior, and useful error messages. Remove secrets and personal
+information from logs.
