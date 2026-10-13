@@ -97,6 +97,7 @@ and easy to maintain.
 -   Do not document unsupported options, commands, or guarantees.
 -   Avoid repeating long instructions across files; link to
     `CONTRIBUTING.md` for contributor workflow.
+-   Write all documentation, comments, and responses in English.
 
 ## Suggested workflow
 

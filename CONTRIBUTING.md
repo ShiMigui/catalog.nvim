@@ -83,6 +83,10 @@ If a hook fails, investigate and fix the cause before committing. Avoid
 
 AI coding agents must also follow [`AGENTS.md`](AGENTS.md).
 
+## Language
+
+All contributions must be written in English, including code comments, documentation, commit messages, pull request descriptions, and issue discussions. This keeps the project consistent and accessible.
+
 ## Tests and checks
 
 Run the checks relevant to your change. The standard test command is:
