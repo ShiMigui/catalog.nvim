@@ -1,5 +1,7 @@
 ---Base package entity.
 ---
+local log = require("catalog.logger").New("packages.package")
+
 ---[Package](lua://catalog.packages.package) builds the
 ---[catalog.package](lua://catalog.package) shape from provider data. Providers
 ---supply their own `install` and `installed`, which usually close over a
@@ -16,6 +18,7 @@
 ---@param installed fun(self: catalog.package): boolean Checks whether it is installed.
 ---@return catalog.package
 return function(provider_name, name, exec_name, install, installed)
+	log:DBG("Creating package: provider=%s name=%s exec=%s", provider_name, name, tostring(exec_name or name))
 	---@type catalog.package
 	return {
 		provider_name = provider_name,
