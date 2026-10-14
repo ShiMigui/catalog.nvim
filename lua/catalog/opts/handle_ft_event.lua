@@ -48,20 +48,32 @@ function M.setup(block)
 		return
 	end
 
-	block.log:DBG("Registering the FileType autocommand")
+	block.log:DBG("handle_ft_event: registering FileType autocmd")
 	vim.api.nvim_create_autocmd("FileType", {
 		group = vim.api.nvim_create_augroup("catalog.handle_ft_event", { clear = true }),
 		callback = function(args)
 			local ft = args.match
 			if not handled[ft] then
+				block.log:DBG("handle_ft_event: first time handling ft=%s", ft)
 				handled[ft] = true
 				local tools = ft_tools[ft]
 				if not tools then
+					block.log:DBG("handle_ft_event: no tools mapped for ft=%s", ft)
 					return
 				end
 
-				block.log:DBG("Handling filetype '%s'", ft)
-				callback(ft, resolve(tools, "lsp"), resolve(tools, "formatter"), resolve(tools, "linter"))
+				local lsp = resolve(tools, "lsp")
+				local fmt = resolve(tools, "formatter")
+				local lin = resolve(tools, "linter")
+
+				block.log:DBG(
+					"handle_ft_event: calling callback for ft=%s (lsp=%d fmt=%d linter=%d)",
+					ft,
+					lsp and vim.tbl_count(lsp) or 0,
+					fmt and vim.tbl_count(fmt) or 0,
+					lin and vim.tbl_count(lin) or 0
+				)
+				callback(ft, lsp, fmt, lin)
 			end
 		end,
 	})

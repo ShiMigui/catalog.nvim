@@ -135,7 +135,14 @@ describe("catalog.packages", function()
 
 		it("defines the formatter and files it under the filetype", function()
 			formatter("stylua", "stylua"):add_to_conform("lua")
+			assert.are_same({ command = "stylua" }, conform.formatters.stylua)
 			assert.are_same({ "stylua" }, conform.formatters_by_ft.lua)
+		end)
+
+		it("defines the formatter command from its executable", function()
+			formatter("some-formatter", "some-fmt"):add_to_conform("lua")
+			assert.are_same({ command = "some-fmt" }, conform.formatters["some-formatter"])
+			assert.are_same({ "some-formatter" }, conform.formatters_by_ft.lua)
 		end)
 
 		it("preserves a formatter definition already configured by the user", function()
