@@ -1,0 +1,160 @@
+---@meta
+
+---Catalog's public Lua API types.
+---
+---Catalog resolves tools through providers and exposes a common package API.
+---LSPs, formatters, and linters are specialized package types: each specialized
+---object is itself a package and inherits the package fields and methods.
+---A package object does not contain nested `lsp`, `formatter`, or `linter`
+---objects.
+---
+---Provider lookup is synchronous. A super-provider checks its child providers
+---in registration order and returns the first provider that recognizes a name.
+---If multiple providers recognize the same name, registration order determines
+---which provider is selected.
+---
+---@alias catalog.package_map table<string, catalog.package>
+---@alias catalog.lsp_map table<string, catalog.lsp>
+---@alias catalog.formatter_map table<string, catalog.formatter>
+---@alias catalog.linter_map table<string, catalog.linter>
+
+---Kind of tool a filetype mapping can list. Keys of a
+---[catalog.ft_tools](lua://catalog.ft_tools) entry.
+---@alias catalog.tool_kind "lsp"|"formatter"|"linter"
+
+---Filetype to tools mapping consumed by
+---`catalog.opts.handle_ft_event`. Each value maps a tool kind to a list of
+---package names.
+---@alias catalog.ft_tools table<string, table<catalog.tool_kind, string[]>>
+
+---Base type for a tool package resolved by a provider.
+---@class catalog.package
+---Name of the provider that created this package descriptor.
+---@field provider_name string
+---Package name understood by the selected provider. This may differ from the
+---executable name and from names used by other package managers.
+---@field name string
+---Executable name for the tool. For language-server packages this is also the
+---server name used with `vim.lsp.config` and `vim.lsp.enable`.
+---@field exec_name string
+---Checks whether the package is installed according to this provider.
+---@field installed fun(self: catalog.package): boolean
+---Installs the package if needed. Implementations must be idempotent because
+---consumers may call this without first calling `installed()`.
+---@field install fun(self: catalog.package)
+---Whether this package was specialized as a language server
+---([Lsp](lua://catalog.packages.lsp)).
+---@field is_lsp boolean
+---Whether this package was specialized as a formatter
+---([Formatter](lua://catalog.packages.formatter)).
+---@field is_formatter boolean
+---Reserved for a future linter specialization; always `false` for now.
+---@field is_linter boolean
+
+---A language-server package. Inherits all fields and methods from
+---`catalog.package`; the LSP object itself owns the package identity and state.
+---@class catalog.lsp: catalog.package
+---Configuration for this server, seeded as a deep copy of the shared default
+---in `catalog.opts.lsp` so instances never share mutable state.
+---@field config vim.lsp.Config
+---Deep-merges `cfg` into this server's configuration, with values in `cfg`
+---taking precedence.
+---@field update fun(self: catalog.lsp, cfg: vim.lsp.Config)
+---Registers the current configuration under `exec_name` and enables that
+---server. This operation must be idempotent: if the server is already enabled,
+---it does nothing. `self` is the same object that also provides `name` and
+---package data.
+---@field enable fun(self: catalog.lsp)
+
+---A formatter package. Inherits all fields and methods from `catalog.package`.
+---@class catalog.formatter: catalog.package
+---Registers the formatter with conform.nvim and files it under `ft`. Defines
+---`conform.formatters[name]` from `exec_name` unless the user already
+---configured that name, then appends the name to
+---`conform.formatters_by_ft[ft]`. Requires conform.nvim; logs a warning when
+---it is unavailable.
+---@field add_to_conform fun(self: catalog.formatter, ft: string)
+
+---A linter package. Inherits all fields and methods from `catalog.package`.
+---This type is available for future linter-specific behavior.
+---@class catalog.linter: catalog.package
+
+---Provider responsible for resolving package names into package objects.
+---@class catalog.provider
+---Unique identifier for this provider (e.g. `"mason"` or `"system"`).
+---@field name string
+---Attempts to resolve `name`. Returns a package object when recognized or
+---`nil` when this provider does not handle the name. An ordinary miss should
+---not raise an error, because the super-provider may try the next provider.
+---@field try_provide fun(self: catalog.provider, name: string): catalog.package|nil
+---Resolves `name` or reports that this provider cannot provide it. Use
+---`try_provide` for expected misses during provider discovery.
+---@field provide fun(self: catalog.provider, name: string): catalog.package|nil
+
+---Provider that delegates resolution to child providers.
+---
+---Resolutions are cached for the rest of the session: a hit returns the same
+---package object, and a miss is remembered so providers are not consulted
+---again for that name.
+---@class catalog.super_provider: catalog.provider
+---Adds a child provider. Children are checked synchronously in registration
+---order; the first provider that recognizes a package wins.
+---@field sub fun(self: catalog.super_provider, provider: catalog.provider): catalog.super_provider
+
+---Options for the default LSP configuration, handled by the
+---`catalog.opts.lsp` module. Its default is merged on top of Neovim's client
+---capabilities and seeded into every language server.
+---@class catalog.opts.lsp
+---Configuration merged into each LSP's configuration before server-specific
+---settings are applied. Server-specific settings should take precedence.
+---@field default? vim.lsp.Config
+
+---Callback invoked when a configured filetype is handled.
+---Maps contain specialized package objects, not wrapper objects.
+---@alias catalog.opts.handle_ft_event fun(ft: string, lsps: catalog.lsp_map|nil,
+---	formatters: catalog.formatter_map|nil, linters: catalog.linter_map|nil)
+
+---Options accepted by Catalog setup.
+---@class catalog.opts.init
+---LSP-specific setup options, including the default server configuration.
+---@field lsp? catalog.opts.lsp
+---Called for a configured filetype with the packages resolved for that type.
+---A missing category is represented by `nil`; an empty map means the category
+---was configured but resolved to no packages, if the implementation preserves
+---that distinction.
+---@field handle_ft_event? catalog.opts.handle_ft_event
+
+---Shared method prototype. The methods below are created exactly once and are
+---reachable from every logger through `__index`.
+---@class catalog.logger
+---Rendered `[scope] ` prefix prepended to every message.
+---@field prefix? string
+---Emits a DEBUG message.
+---@field DBG fun(self: catalog.logger, msg: string, ...: any)
+---Emits an INFO message.
+---@field INF fun(self: catalog.logger, msg: string, ...: any)
+---Emits a WARNING message.
+---@field WRN fun(self: catalog.logger, msg: string, ...: any)
+---Emits an ERROR message.
+---@field ERR fun(self: catalog.logger, msg: string, ...: any)
+
+---Status flags that control which levels a logger emits. A `false` flag
+---suppresses that level everywhere.
+---@class catalog.logger.Status
+---Emit debug messages.
+---@field DBG boolean
+---Emit info messages.
+---@field INF boolean
+---Emit warning messages.
+---@field WRN boolean
+---Emit error messages.
+---@field ERR boolean
+
+---Context handed to a [NewIn](lua://catalog.logger.NewIn) callback. `NewIn`
+---only runs when the payload is present (not `nil` and not an empty table),
+---so `payload` is never empty here. `T` is inferred from the payload value.
+---@class catalog.logger.block<T>
+---Logger scoped to the block; use it for messages logged inside the block.
+---@field log catalog.logger
+---The value `NewIn` received, passed through unchanged.
+---@field payload T

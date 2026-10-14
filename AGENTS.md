@@ -117,11 +117,15 @@ actual repository before relying on this outline, since files may
 change:
 
 -   `lua/catalog.lua`: public entry point and option normalization.
--   `lua/catalog/log.lua`: scoped logging.
--   `lua/catalog/lsp/`: LSP integration.
--   `lua/catalog/provider/`: provider registry and providers.
--   `lua/catalog/scripts/`: installation and option helpers.
--   `lua/catalog/auto_install/`: filetype-based installation mapping.
+-   `lua/catalog/meta.lua`: public LuaCATS types for the API.
+-   `lua/catalog/logger.lua`: scoped logging.
+-   `lua/catalog/ft_tools.lua`: filetype-to-tools mapping.
+-   `lua/catalog/opts/`: integrations applied by `catalog.setup` (`lsp`,
+    `handle_ft_event`).
+-   `lua/catalog/packages/`: package entities (`Package`, `Lsp`,
+    `Formatter`).
+-   `lua/catalog/providers/`: provider registry, super provider, and Mason
+    provider.
 
 ## Versioning and Git Tags
 
