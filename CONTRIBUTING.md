@@ -99,7 +99,7 @@ Other useful commands, when defined by the repository, include:
 
 ``` bash
 make test-verbose
-make test-file FILE=tests/provider_spec.lua
+make test-file FILE=tests/providers_spec.lua
 make format-check
 make lint
 ```

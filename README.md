@@ -1,294 +1,294 @@
 # catalog.nvim
 
-`catalog.nvim` coordinates tool installation and configuration in Neovim
-through a small, provider-based API. It includes a Mason provider and
-integrations for language servers and filetype-based auto-installation.
+`catalog.nvim` resolves, installs, and configures development tools in
+Neovim through a small, provider-based API. Providers turn names into
+package entities, and specialized entities such as language servers extend
+a package with extra behavior.
 
-The goal is to keep package-manager details separate from the
-integrations that consume tools.
+Package-manager details stay inside providers, separate from the entities
+consumers use.
+
+> This is an in-progress rewrite. The provider registry, package entities,
+> logger, LSP defaults, and filetype-event handling are implemented, and
+> `catalog.setup` wires the opt-in integrations together.
 
 ## Features
 
--   **Provider registry:** register only the package providers your
-    setup needs.
--   **Session cache:** seed the cache with already-installed packages at
-    startup.
--   **LSP integration:** merge shared defaults with per-server
-    configuration, then configure and enable servers.
--   **Filetype-based installation:** install mapped tools when a
-    supported filetype is first opened.
--   **Scoped logging:** control notifications with `debug` and `silent`
-    options.
+-   **Provider registry:** a single super provider consults registered
+    providers in order and caches every lookup.
+-   **Mason provider:** resolves packages through `mason-registry`.
+-   **Package entities:** `catalog.packages` builds the base package with
+    `Package`; `Lsp` and `Formatter` extend it in place and reuse shared
+    methods.
+-   **Scoped logging:** `catalog.logger` emits `[scope] STATUS message`
+    notifications with global level control.
+-   **Setup entry point:** `catalog.setup` wires the opt-in integrations —
+    LSP defaults and the filetype-event callback — in one call.
+-   **Type definitions:** the public API is described in
+    `lua/catalog/meta.lua` for LuaLS.
 
 ## Requirements
 
 -   Neovim 0.11 or newer, using `vim.lsp.config` and `vim.lsp.enable`.
--   [mason.nvim](https://github.com/mason-org/mason.nvim) for the
-    built-in Mason provider.
+-   [mason.nvim](https://github.com/mason-org/mason.nvim) for the built-in
+    Mason provider.
 -   [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) is
     recommended because it supplies configurations for many language
     servers.
+-   [conform.nvim](https://github.com/stevearc/conform.nvim) is optional;
+    `catalog.formatter` registers formatters with it.
 
 ## Installation
 
-Example for [lazy.nvim](https://github.com/folke/lazy.nvim):
+Requires Neovim 0.11+ and at least one provider. The example below uses
+[lazy.nvim](https://github.com/folke/lazy.nvim) with the built-in Mason
+provider.
 
-``` lua
-{
+Providers are **not** registered by `catalog.setup`. Register the providers
+you want on the super provider first, then apply the options:
+
+```lua
+return {
     "ShiMigui/catalog.nvim",
     dependencies = {
         { "mason-org/mason.nvim", opts = {} },
         "neovim/nvim-lspconfig",
     },
-    opts = {},
-}
-```
-
-Register the Mason provider before calling `catalog.setup()`. Mason's
-registry may need to refresh before it can resolve packages; the quick
-start below handles that case.
-
-## Quick start
-
-``` lua
-{
-    "ShiMigui/catalog.nvim",
-    dependencies = {
-        { "mason-org/mason.nvim", opts = {} },
-        "neovim/nvim-lspconfig",
+    opts = {
+        lsp = { default = { flags = { debounce_text_changes = 150 } } },
+        handle_ft_event = function(ft, lsps, formatters, linters)
+            -- See "Options" below.
+        end,
     },
-    config = function()
-        local registry = require("mason-registry")
+    config = function(_, opts)
+        -- 1. Register a provider on the super provider.
+        require("catalog.providers"):sub(require("catalog.providers.mason_provider"))
 
-        local function setup_catalog()
-            require("catalog.provider.mason")
-
-            require("catalog").setup({
-                lsp = {
-                    config_by = {
-                        lua_ls = {},
-                        ["yamlls"] = {
-                            settings = { yaml = { schemas = {} } },
-                        },
-                    },
-                },
-            })
-        end
-
-        if registry.has_package("lua-language-server") then
-            setup_catalog()
-        else
-            registry.refresh(setup_catalog)
-        end
+        -- 2. Apply the options.
+        require("catalog").setup(opts)
     end,
 }
 ```
 
-Use the server configuration name expected by Neovim, not necessarily
-the package name used by Mason. For example, the Mason package
-`typescript-language-server` is commonly configured as `ts_ls`.
+`mason.nvim` must be set up before the Mason provider is registered. As a
+lazy.nvim dependency with `opts = {}`, `mason.setup()` runs before this
+plugin's `config`, so the order above is safe. Swap the registered provider
+for your own if you resolve packages from a different source.
 
-## Configuration
+## Usage
 
-Call `require("catalog").setup(opts)`.
+### Options
 
-  --------------------------------------------------------------------------------
-  Option               Type                 Default           Description
-  -------------------- -------------------- ----------------- --------------------
-  `auto_install`       `boolean \| table`   `true`            Enables or disables
-                                                              filetype-triggered
-                                                              installation. A
-                                                              table can enable
-                                                              `lsp`, `formatter`,
-                                                              and `linter`
-                                                              independently and
-                                                              may include a
-                                                              `callback`.
+`catalog.setup(opts)` applies the opt-in integrations. Both keys are
+optional, and an absent or empty value is skipped:
 
-  `ensure_installed`   `string[]`           `nil`             Package names to
-                                                              provide and install
-                                                              during setup.
-
-  `lsp`                `table`              `nil`             LSP integration
-                                                              settings.
-
-  `debug`              `boolean`            `false`           Enables debug
-                                                              notifications.
-
-  `silent`             `boolean`            `false`           Suppresses error,
-                                                              warning, and info
-                                                              notifications.
-  --------------------------------------------------------------------------------
-
-### LSP options
-
-  ---------------------------------------------------------------------------------
-  Option                  Type                              Description
-  ----------------------- --------------------------------- -----------------------
-  `default`               `vim.lsp.Config`                  Configuration merged
-                                                            into every server
-                                                            configured through
-                                                            Catalog.
-
-  `config_by`             `table<string, vim.lsp.Config>`   Per-server
-                                                            configuration keyed by
-                                                            Neovim's server
-                                                            configuration name.
-                                                            Each entry is
-                                                            installed, configured,
-                                                            and enabled during
-                                                            setup.
-  ---------------------------------------------------------------------------------
-
-Example:
-
-``` lua
-require("catalog.provider.mason")
-
+```lua
 require("catalog").setup({
-    auto_install = {
-        lsp = true,
-        formatter = true,
-        linter = false,
-    },
-    ensure_installed = {
-        "typescript-language-server",
-    },
+    -- Merged on top of Neovim's client capabilities and seeded into every
+    -- language server. Invalid values are ignored.
     lsp = {
-        default = {
-            flags = { debounce_text_changes = 150 },
-        },
-        config_by = {
-            ts_ls = {},
-            eslint = {
-                settings = {
-                    workingDirectories = { mode = "auto" },
-                },
-            },
-        },
+        default = { flags = { debounce_text_changes = 150 } },
     },
+
+    -- Called at most once per configured filetype per session.
+    handle_ft_event = function(ft, lsps, formatters, linters)
+        -- Maps keyed by package name, or `nil` for a kind the filetype
+        -- does not configure.
+    end,
 })
 ```
 
-### Auto-install callback
+`handle_ft_event` receives `nil` for a kind the filetype does not configure
+and an empty map for a configured kind that resolved to no packages. The
+callback installs and enables nothing: it receives the packages and decides
+what to do with them.
 
-The optional callback runs after a filetype has been processed. It
-receives the filetype followed by the provided package lists for LSP
-servers, formatters, and linters. A disabled kind is passed as `false`.
+Providers are intentionally not an option. `catalog.setup` never registers
+them, so register at least one provider before calling setup, as shown in
+[Installation](#installation).
 
-``` lua
-auto_install = {
-    lsp = true,
-    formatter = true,
-    linter = false,
-    callback = function(ft, lsps, formatters, linters)
-        -- Integrate the provided packages with your preferred tools.
-    end,
-}
+### Resolving packages
+
+```lua
+local providers = require("catalog.providers")
+
+-- `provide` reports a miss; `try_provide` returns nil quietly.
+local pkg = providers:provide("lua-language-server")
 ```
 
-Catalog provides packages and orchestrates installation; it does not
-configure formatter or linter plugins internally.
+A `catalog.package` exposes:
 
-## How it works
+| Field           | Description                                                   |
+| --------------- | ------------------------------------------------------------- |
+| `provider_name` | Provider that created the package.                            |
+| `name`          | Package name understood by the provider.                      |
+| `exec_name`     | Executable name; for language servers, the server name.       |
+| `installed()`   | Returns whether the package is installed.                     |
+| `install()`     | Installs the package when needed.                             |
+| `is_lsp`        | `true` when the package is a language server.                 |
+| `is_linter`     | Reserved for a future linter specialization (always `false`). |
+| `is_formatter`  | `true` when the package is a formatter.                       |
 
-1.  Register providers before calling `setup()`.
-2.  Catalog loads installed packages from registered providers into a
-    session cache.
-3.  `ensure_installed`, LSP setup, and auto-install request packages
-    through the provider registry.
-4.  The first registered provider that can provide a package handles
-    that package.
+### Language servers
 
-The built-in Mason provider is registered explicitly:
+When a provider builds a language-server package it attaches the `Lsp`
+entity, so the package also exposes `config`, `update(cfg)`, and
+`enable()`:
 
-``` lua
-require("catalog.provider.mason")
+```lua
+local pkg = require("catalog.providers"):provide("lua-language-server")
+
+pkg:install()
+pkg:update({ settings = { Lua = { runtime = { version = "LuaJIT" } } } })
+pkg:enable()
 ```
+
+`update` deep-merges `cfg` into `pkg.config`; call it before `enable`.
+`enable` registers the configuration under `exec_name` and enables the
+server, and does nothing when the server is already enabled.
+
+`pkg.config` starts as a deep copy of the shared default in
+`catalog.opts.lsp`: Neovim's default client capabilities unless a default is
+supplied through `catalog.setup({ lsp = { default = ... } })`.
+
+`install()` delegates to the provider and is asynchronous for Mason; make
+sure the package is installed before relying on the server starting.
+
+### Formatters
+
+Specialize a resolved package with `catalog.packages.Formatter` to attach
+`add_to_conform(ft)`, which registers the formatter with
+[conform.nvim](https://github.com/stevearc/conform.nvim) and files it under
+the given filetype:
+
+```lua
+local entity = require("catalog.packages")
+local pkg = require("catalog.providers"):provide("stylua")
+
+pkg:install()
+entity.Formatter(pkg):add_to_conform("lua")
+```
+
+`add_to_conform` defines `conform.formatters[pkg.name]` from `pkg.exec_name`
+unless you already configured that name, then appends `pkg.name` to
+`conform.formatters_by_ft[ft]`. Your own conform configuration is preserved.
+When conform.nvim is not installed, it logs a warning and does nothing.
+
+Conform needs both tables: `conform.formatters` maps a formatter name to its
+command, while `conform.formatters_by_ft` lists the names to run for a
+filetype. A formatter name is therefore the shared identity, and the filetype
+is what selects it. `add_to_conform(ft)` writes both, so you only pass the
+filetype.
+
+## Providers
+
+The super provider (`require("catalog.providers")`) keeps an ordered list
+of providers:
+
+-   `providers:sub(provider)` registers a provider.
+-   `providers:try_provide(name)` returns the first package found or
+    `nil`.
+-   `providers:provide(name)` does the same but reports a miss.
+
+Providers are consulted in registration order, so register preferred
+providers first. Resolutions are cached for the rest of the session: a hit
+returns the same package object, and a miss is remembered so providers are
+not consulted again for that name.
+
+### Mason provider
+
+`catalog.providers.mason_provider` is a provider backed by
+`mason-registry`; register it with `providers:sub(...)`. It uses
+`mason-registry.has_package` for quiet lookups. When a package maps to a
+language server (`spec.neovim.lspconfig`), the provider sets `exec_name` to
+the server name and attaches the `Lsp` entity.
 
 ### Custom providers
 
-A provider supplies packages from a package manager. It must expose
-`name`, `provide(name)`, and `load_installed()`.
+A provider is a `catalog.provider`: it exposes
+`name`, `try_provide(self, name)`, and `provide(self, name)`, and returns
+`nil` for names it does not handle. Build packages with the
+`catalog.packages` entities:
 
-``` lua
-local provider = {}
+```lua
+local entity = require("catalog.packages")
 
-provider.name = "my-source"
+local provider = { name = "my-source" }
 
-function provider.provide(name)
-    local package = my_package_manager.get(name)
-    if not package then
+function provider.try_provide(self, name)
+    local handle = my_package_manager.get(name)
+    if not handle then
         return nil
     end
 
-    return {
-        name = name,
-        provider_name = provider.name,
-        installed = function()
-            return package:is_installed()
-        end,
-        install = function()
-            package:install()
-        end,
-    }
+    return entity.Package("my-source", name, handle.executable, function(pkg)
+        handle:install()
+    end, function()
+        return handle:is_installed()
+    end)
 end
 
-function provider.load_installed()
-    local installed = {}
-
-    for _, package in pairs(my_package_manager.installed()) do
-        installed[package.name] = {
-            name = package.name,
-            provider_name = provider.name,
-        }
-    end
-
-    return installed
+function provider.provide(self, name)
+    return self:try_provide(name)
 end
+
+require("catalog.providers"):sub(provider)
 
 return provider
 ```
 
-Register a custom provider before setup:
+`Package(provider_name, name, exec_name, install, installed)` creates the
+base entity; `exec_name` defaults to `name` when `nil`. To specialize a
+package, extend the base before returning it, for example with
+`entity.Lsp(pkg)` or `entity.Formatter(pkg)`.
 
-``` lua
-local provider = require("catalog.provider.my_provider")
-require("catalog.provider").append(provider)
+The registry only calls `try_provide`; a provider's `provide` is available
+to callers that want a reported miss.
+
+## Logging
+
+```lua
+local logger = require("catalog.logger")
+local log = logger.New("providers.mason")
+
+log:DBG("resolved %d package(s)", n) -- silent until enabled
+
+logger.Status.DBG = true -- enable debug messages globally
 ```
 
-Unknown package names should return `nil` rather than raising an error.
-Providers are checked in registration order, so register preferred
-providers first.
+`New` returns the logger for a scope, creating it once. `NewIn` runs a
+callback for a non-empty payload, indented and bracketed by debug markers:
+
+```lua
+logger.NewIn(packages, function(block)
+    block.log:DBG("handling %s", block.payload.name)
+end, "catalog.setup")
+```
+
+`logger.Status` toggles each level (`DBG`, `INF`, `WRN`, `ERR`) globally;
+disabled levels are skipped before any formatting.
 
 ## Troubleshooting
 
-### An LSP server does not start
-
-1.  Confirm that Neovim is version 0.11 or newer.
-2.  Confirm the Mason provider is registered before `catalog.setup()`.
-3.  Confirm the package is installed in Mason.
-4.  Check that `lsp.config_by` uses the server configuration name
-    expected by Neovim.
-5.  Enable `debug = true` and inspect Catalog notifications.
-6.  Use Neovim's `:checkhealth vim.lsp` and `:LspInfo` where available
-    to inspect the LSP state.
-
 ### A package cannot be found
 
--   Verify the package name in the relevant provider's registry.
--   Remember that package names and LSP configuration names can differ.
--   Enable debug logging to inspect provider lookup failures.
+-   Verify the name in the provider's registry.
+-   Lookups are cached, including misses. If a name missed before its
+    provider or registry was ready, reload Neovim after fixing the setup.
+-   Enable debug logging with `require("catalog.logger").Status.DBG = true`
+    to inspect lookups.
+-   Package names and language-server names can differ; the Mason provider
+    maps `spec.neovim.lspconfig` to `exec_name`.
 
-### A formatter or linter is not installed
+### An LSP server does not start
 
--   Confirm that its kind is enabled in `auto_install`.
--   Check that the current filetype is present in
-    `lua/catalog/auto_install/table.lua`.
--   Confirm that a registered provider supports the requested package.
+-   Confirm that Neovim is version 0.11 or newer.
+-   Confirm that `catalog.providers.mason_provider` is required after
+    `mason.setup()`.
+-   Confirm that the package is installed, then call `pkg:enable()`.
 
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for
-development setup, testing, style, and pull request guidelines. AI
-coding agents should also follow [AGENTS.md](AGENTS.md).
+development setup, testing, style, and pull request guidelines. AI coding
+agents should also follow [AGENTS.md](AGENTS.md).
