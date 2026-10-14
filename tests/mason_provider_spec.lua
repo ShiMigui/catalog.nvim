@@ -90,6 +90,43 @@ describe("catalog.providers.mason_provider", function()
 		assert.equals("metapackage", pkg.exec_name)
 	end)
 
+	it("falls back to the package name when the spec has no bin key", function()
+		load({
+			metapackage = mason_package("metapackage", {}, { value = false }),
+		})
+
+		local pkg = provider:try_provide("metapackage")
+		assert.equals("metapackage", pkg.exec_name)
+	end)
+
+	it("specializes a Formatter-category package as a formatter", function()
+		load({
+			["custom-fmt"] = mason_package("custom-fmt", {
+				bin = { ["custom-fmt"] = "custom-fmt" },
+				categories = { "Formatter" },
+			}, { value = false }),
+		})
+
+		local pkg = provider:try_provide("custom-fmt")
+		assert.equals("custom-fmt", pkg.exec_name)
+		assert.is_true(pkg.is_formatter)
+		assert.is_false(pkg.is_lsp)
+		assert.equals("function", type(pkg.add_to_conform))
+	end)
+
+	it("does not specialize a package as a formatter without the category", function()
+		load({
+			["not-a-fmt"] = mason_package("not-a-fmt", {
+				bin = { ["not-a-fmt"] = "not-a-fmt" },
+				categories = { "Linter" },
+			}, { value = false }),
+		})
+
+		local pkg = provider:try_provide("not-a-fmt")
+		assert.is_false(pkg.is_formatter)
+		assert.is_nil(pkg.add_to_conform)
+	end)
+
 	it("mirrors the installed state of the registry package", function()
 		local installed = { value = false }
 		load({
