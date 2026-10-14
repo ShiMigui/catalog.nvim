@@ -15,6 +15,7 @@ local log = require("catalog.logger").New("packages.formatter")
 ---@param self catalog.formatter
 ---@param ft string Filetype the formatter should run for.
 local function add_to_conform(self, ft)
+	log:DBG("add_to_conform %s for ft=%s", self.name, ft)
 	local ok, conform = pcall(require, "conform")
 	if not ok then
 		log:WRN("conform.nvim is unavailable, skipping formatter '%s'", self.name)
@@ -32,9 +33,11 @@ local function add_to_conform(self, ft)
 	end
 	for _, name in ipairs(by_ft) do
 		if name == self.name then
+			log:DBG("Formatter %s already in conform.formatters_by_ft[%s]", self.name, ft)
 			return
 		end
 	end
+	log:DBG("Appending %s to conform.formatters_by_ft[%s]", self.name, ft)
 	by_ft[#by_ft + 1] = self.name
 end
 
@@ -45,6 +48,7 @@ end
 return function(base)
 	---@cast base catalog.formatter
 	base.add_to_conform = add_to_conform
+	log:DBG("Creating Formatter for %s", base.name)
 	base.is_formatter = true
 	return base
 end
