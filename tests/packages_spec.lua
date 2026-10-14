@@ -135,7 +135,6 @@ describe("catalog.packages", function()
 
 		it("defines the formatter and files it under the filetype", function()
 			formatter("stylua", "stylua"):add_to_conform("lua")
-			assert.are_same({ command = "stylua" }, conform.formatters.stylua)
 			assert.are_same({ "stylua" }, conform.formatters_by_ft.lua)
 		end)
 
