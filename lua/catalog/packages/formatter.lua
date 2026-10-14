@@ -22,6 +22,14 @@ local function add_to_conform(self, ft)
 		return
 	end
 
+	-- Define the formatter from its executable unless the user already did.
+	-- Conform merges overrides with a matching built-in definition, so built-in
+	-- args and metadata are preserved when one exists.
+	if conform.formatters[self.name] == nil then
+		log:DBG("Defining conform.formatters[%s] with command %s", self.name, self.exec_name)
+		conform.formatters[self.name] = { command = self.exec_name }
+	end
+
 	local by_ft = conform.formatters_by_ft[ft]
 	if by_ft == nil then
 		conform.formatters_by_ft[ft] = { self.name }
