@@ -16,18 +16,21 @@ local providerName = "mason"
 
 ---Converts a mason package into a [catalog.package](lua://catalog.package).
 ---
----When the package maps to a language server (`spec.neovim.lspconfig`), that
----server name is used as `exec_name` and the
----[Lsp](lua://catalog.packages.lsp) entity is attached, so
----[enable](lua://catalog.lsp.enable) can register and enable the server.
----Otherwise `exec_name` is the package's first `spec.bin` entry, falling
----back to the package name.
+---`exec_name` is always the language-server name when the package maps to one
+---(`spec.neovim.lspconfig`), otherwise the first `spec.bin` entry, otherwise
+---the package name.
+---
+---Language servers get the [Lsp](lua://catalog.packages.lsp) entity so
+---[enable](lua://catalog.lsp.enable) can register and enable them, and
+---packages in the `Formatter` category get the
+---[Formatter](lua://catalog.packages.formatter) entity so they can register
+---with conform.nvim.
 ---@param pkg Package A mason-registry package object.
 ---@return catalog.package
 local function convert(pkg)
 	local spec = pkg.spec
 	local lspconfig = spec.neovim and spec.neovim.lspconfig
-	local bin = next(spec.bin) or pkg.name
+	local bin = next(spec.bin or {})
 
 	---@param self catalog.package
 	local function install(self)
@@ -40,12 +43,18 @@ local function convert(pkg)
 		pkg:install()
 	end
 
-	local base = entity.Package(providerName, pkg.name, lspconfig or bin, install, function()
+	local base = entity.Package(providerName, pkg.name, lspconfig or bin or pkg.name, install, function()
 		return pkg:is_installed()
 	end)
 
 	if lspconfig then
 		entity.Lsp(base)
+	end
+
+	for _, category in ipairs(spec.categories or {}) do
+		if category == "Formatter" then
+			entity.Formatter(base)
+		end
 	end
 
 	return base
