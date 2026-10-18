@@ -31,7 +31,8 @@ consumers use.
 
 -   Neovim 0.11 or newer, using `vim.lsp.config` and `vim.lsp.enable`.
 -   [mason.nvim](https://github.com/mason-org/mason.nvim) for the built-in
-    Mason provider.
+    Mason provider. Start Mason before catalog.nvim and load its registry
+    before running the plugin (see [Installation](#installation)).
 -   [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) is
     recommended because it supplies configurations for many language
     servers.
@@ -70,10 +71,24 @@ return {
 }
 ```
 
-`mason.nvim` must be set up before the Mason provider is registered. As a
-lazy.nvim dependency with `opts = {}`, `mason.setup()` runs before this
-plugin's `config`, so the order above is safe. Swap the registered provider
-for your own if you resolve packages from a different source.
+`mason.nvim` must be initialized before catalog.nvim runs:
+`require("mason").setup()` registers the registry sources that the Mason
+provider reads. As a lazy.nvim dependency with `opts = {}`, `mason.setup()`
+runs before this plugin's `config`, so the order above is safe.
+
+The registry must also be loaded before `catalog.setup({})`. Run `:Mason`
+first, or refresh the registry explicitly and apply the options from the
+callback:
+
+```lua
+require("mason-registry").refresh(function()
+    require("catalog.providers"):sub(require("catalog.providers.mason_provider"))
+    require("catalog").setup({}) -- your options
+end)
+```
+
+Swap the registered provider for your own if you resolve packages from a
+different source.
 
 ## Usage
 
@@ -199,9 +214,16 @@ not consulted again for that name.
 
 `catalog.providers.mason_provider` is a provider backed by
 `mason-registry`; register it with `providers:sub(...)`. It uses
-`mason-registry.has_package` for quiet lookups. When a package maps to a
-language server (`spec.neovim.lspconfig`), the provider sets `exec_name` to
-the server name and attaches the `Lsp` entity.
+`mason-registry.has_package` for quiet lookups.
+
+`exec_name` is the language-server name when the package maps to one
+(`spec.neovim.lspconfig`), otherwise the first `spec.bin` entry, otherwise
+the package name. Language servers get the `Lsp` entity, and packages in the
+`Formatter` category get the `Formatter` entity so they can register with
+conform.nvim.
+
+Mason must be initialized and its registry loaded before this provider
+resolves packages; see [Installation](#installation).
 
 ### Custom providers
 
@@ -289,6 +311,8 @@ disabled levels are skipped before any formatting.
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for
-development setup, testing, style, and pull request guidelines. AI coding
-agents should also follow [AGENTS.md](AGENTS.md).
+Contributions are welcome. Every pull request must have exactly one related
+tag (for a fix, the next patch tag such as `v2.0.1`). See
+[CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, style,
+and pull request guidelines. AI coding agents should also follow
+[AGENTS.md](AGENTS.md).

@@ -131,8 +131,8 @@ change:
 
 - Follow Semantic Versioning (`MAJOR.MINOR.PATCH`) for stable releases.
 - Use annotated Git tags for releases, following the existing repository convention (for example, `v1.2.3`).
+- Every pull request must have exactly one related tag. Use the patch tag for a fix (for example, `v2.0.1` after `v2.0.0`) and reference it in the pull request description.
 - Never create, move, overwrite, or delete release tags unless explicitly instructed by the user.
-- Never create a release tag automatically as part of an ordinary code change, commit, or pull request.
 - Before preparing a release, inspect the existing tags and review the changes since the latest release.
 - Ensure the release version is consistent with the project's changelog and release notes, when present.
 - Do not assume that a change qualifies for a major, minor, or patch release without considering its impact on the public API and existing behavior.
