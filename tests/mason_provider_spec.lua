@@ -3,7 +3,9 @@ describe("catalog.providers.mason_provider", function()
 
 	---Stubs mason-registry and loads the provider.
 	---@param packages table<string, table>
-	local function load(packages)
+	---@param opts? { installed?: boolean, on_refresh?: fun(): boolean, string }
+	local function load(packages, opts)
+		opts = opts or {}
 		package.loaded["mason-registry"] = {
 			has_package = function(name)
 				return packages[name] ~= nil
@@ -13,6 +15,20 @@ describe("catalog.providers.mason_provider", function()
 					error("unknown package " .. name)
 				end
 				return packages[name]
+			end,
+			sources = {
+				size = function()
+					return 1
+				end,
+				is_all_installed = function()
+					return opts.installed ~= false
+				end,
+			},
+			refresh = function()
+				if opts.on_refresh then
+					return opts.on_refresh()
+				end
+				return true
 			end,
 		}
 		package.loaded["catalog.opts.lsp"] = nil
@@ -49,6 +65,58 @@ describe("catalog.providers.mason_provider", function()
 	it("returns nil for names the registry does not have", function()
 		load({})
 		assert.is_nil(provider:try_provide("ghost"))
+	end)
+
+	it("refreshes the registry when no source is installed", function()
+		local original_notify = vim.notify
+		local refreshes = 0
+		vim.notify = function() end
+
+		load({}, {
+			installed = false,
+			on_refresh = function()
+				refreshes = refreshes + 1
+				return true
+			end,
+		})
+
+		vim.notify = original_notify
+		assert.equals(1, refreshes)
+	end)
+
+	it("does not refresh the registry when a source is installed", function()
+		local refreshes = 0
+		load({}, {
+			installed = true,
+			on_refresh = function()
+				refreshes = refreshes + 1
+				return true
+			end,
+		})
+
+		assert.equals(0, refreshes)
+	end)
+
+	it("warns once and does not retry when the refresh fails", function()
+		local original_notify = vim.notify
+		local levels = {}
+		local refreshes = 0
+		vim.notify = function(_, level)
+			levels[#levels + 1] = level
+		end
+
+		load({}, {
+			installed = false,
+			on_refresh = function()
+				refreshes = refreshes + 1
+				return false, "offline"
+			end,
+		})
+		provider:try_provide("ghost")
+
+		vim.notify = original_notify
+		assert.equals(1, refreshes)
+		assert.is_true(vim.tbl_contains(levels, vim.log.levels.WARN))
 	end)
 
 	it("maps an LSP package to its server name and specializes it", function()

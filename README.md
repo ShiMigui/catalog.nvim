@@ -31,8 +31,9 @@ consumers use.
 
 -   Neovim 0.11 or newer, using `vim.lsp.config` and `vim.lsp.enable`.
 -   [mason.nvim](https://github.com/mason-org/mason.nvim) for the built-in
-    Mason provider. Start Mason before catalog.nvim and load its registry
-    before running the plugin (see [Installation](#installation)).
+    Mason provider. Start Mason before catalog.nvim; the provider refreshes
+    the registry from its local cache when needed (see
+    [Installation](#installation)).
 -   [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) is
     recommended because it supplies configurations for many language
     servers.
@@ -76,9 +77,10 @@ return {
 provider reads. As a lazy.nvim dependency with `opts = {}`, `mason.setup()`
 runs before this plugin's `config`, so the order above is safe.
 
-The registry must also be loaded before `catalog.setup({})`. Run `:Mason`
-first, or refresh the registry explicitly and apply the options from the
-callback:
+The Mason provider reads packages from the registry's local cache and
+refreshes it once (synchronously) on the first lookup when the cache is
+missing, so a prior `:Mason` run is not required. To skip that one-time
+stall, load the registry before `catalog.setup({})`:
 
 ```lua
 require("mason-registry").refresh(function()
@@ -222,8 +224,9 @@ the package name. Language servers get the `Lsp` entity, and packages in the
 `Formatter` category get the `Formatter` entity so they can register with
 conform.nvim.
 
-Mason must be initialized and its registry loaded before this provider
-resolves packages; see [Installation](#installation).
+Mason must be initialized before this provider resolves packages. If the
+registry has no local cache yet, the first lookup refreshes it once; see
+[Installation](#installation).
 
 ### Custom providers
 

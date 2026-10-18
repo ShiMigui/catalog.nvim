@@ -1,7 +1,9 @@
 ---Provider backed by the mason-registry.
 ---
 ---Requires `require("mason").setup()` to have been called beforehand, as it
----is what registers the registry sources that provide package specs.
+---is what registers the registry sources that provide package specs. When the
+---registry has no local cache yet, the provider refreshes it once on the first
+---lookup so names resolve without a prior `:Mason` run.
 ---
 ---The module returns a [catalog.provider](lua://catalog.provider). Register it
 ---with [sub](lua://catalog.super_provider.sub) before resolving its packages:
@@ -13,6 +15,46 @@ local mason_registry = require("mason-registry")
 local entity = require("catalog.packages")
 local log = require("catalog.logger").New("providers.mason")
 local providerName = "mason"
+
+---Whether the registry sources were already loaded.
+local registry_checked = false
+
+---Ensures the registry has its local cache loaded before a lookup.
+---
+---`require("mason").setup()` only registers the sources; resolving a package
+---reads the on-disk registry cache that `:Mason` or a previous refresh
+---populates. On a first run that cache is missing, so `has_package` would
+---miss every name and the super provider would cache those misses for the
+---whole session.
+---
+---`refresh()` without a callback is synchronous, so it guarantees the cache
+---exists when it returns. It is only called when a source is not installed,
+---which keeps the network stall off the common path; when the provider is
+---required before `mason.setup()`, the source list is still empty and the
+---check runs again on the first lookup.
+local function ensure_registry()
+	if registry_checked then
+		return
+	end
+
+	local sources = mason_registry.sources
+	if not sources or sources:size() == 0 then
+		return
+	end
+	if sources:is_all_installed() then
+		registry_checked = true
+		return
+	end
+
+	log:INF("mason-registry has no local cache, refreshing...")
+	local ok, err = mason_registry.refresh()
+	if not ok then
+		log:WRN("could not refresh mason-registry: %s", vim.inspect(err))
+	end
+	registry_checked = true
+end
+
+ensure_registry()
 
 ---Converts a mason package into a [catalog.package](lua://catalog.package).
 ---
@@ -64,6 +106,7 @@ end
 return {
 	name = providerName,
 	try_provide = function(_, name)
+		ensure_registry()
 		if mason_registry.has_package(name) then
 			return convert(mason_registry.get_package(name))
 		end
