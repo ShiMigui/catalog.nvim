@@ -18,6 +18,12 @@
 
 Closes #
 
+## Related Tag
+
+<!-- Every pull request must have exactly one related tag (e.g. the patch tag for a fix) -->
+
+Tag:
+
 ## How Has This Been Tested?
 
 <!-- Describe the tests you ran to verify your changes -->
@@ -35,6 +41,7 @@ Closes #
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
+- [ ] Exactly one related tag is associated with this pull request
 - [ ] Any dependent changes have been merged and published
 
 ## Screenshots (if applicable)

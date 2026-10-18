@@ -178,6 +178,9 @@ Before opening a pull request:
     was tested.
 6.  Link related issues and include screenshots or logs when they
     clarify the change.
+7.  Associate exactly one related tag with the pull request, for example
+    the next patch tag (`v2.0.1` after `v2.0.0`) for a fix, and reference
+    it in the description.
 
 Maintainers should review behavior, maintainability, compatibility, and
 test coverage before merging. Repository settings determine required
